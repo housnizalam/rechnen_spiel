@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rechnen_spiel/Widgets/main_seite/giving-answer/antwort_einagabe.dart';
-import 'package:rechnen_spiel/Widgets/main_seite/aufgabe_darstellung.dart';
-import 'package:rechnen_spiel/Widgets/main_seite/bewertung.dart';
-import 'package:rechnen_spiel/Widgets/main_seite/dauer_darstellen.dart';
-import 'package:rechnen_spiel/Widgets/main_seite/gib_berechnung.dart';
-import 'package:rechnen_spiel/Widgets/main_seite/n%C3%A4chst.dart';
+import 'package:rechnen_spiel/Widgets/main_seite/exercise_desplay.dart';
+import 'package:rechnen_spiel/Widgets/main_seite/evaluation.dart';
+import 'package:rechnen_spiel/Widgets/main_seite/periode_desplay.dart';
+import 'package:rechnen_spiel/Widgets/main_seite/game_controller.dart';
+import 'package:rechnen_spiel/Widgets/main_seite/next.dart';
 import 'package:rechnen_spiel/Widgets/main_seite/name.dart';
-import 'package:rechnen_spiel/Widgets/main_seite/stufezeiger.dart';
-import 'package:rechnen_spiel/bloc/rechner_bloc.dart';
+import 'package:rechnen_spiel/Widgets/main_seite/stage_display.dart';
+import 'package:rechnen_spiel/bloc/app_bloc.dart';
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});

@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:rechnen_spiel/bloc/global_variablen.dart';
-import 'package:rechnen_spiel/bloc/rechner_bloc.dart';
+import 'package:rechnen_spiel/bloc/app_bloc.dart';
 
 int gibUnBrimeNummer(AppState state) {
   List<int> listUnbrime = [];

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rechnen_spiel/bloc/rechner_bloc.dart';
+import 'package:rechnen_spiel/bloc/app_bloc.dart';
 
 class GibBerechnung extends StatelessWidget {
   const GibBerechnung({Key? key}) : super(key: key);

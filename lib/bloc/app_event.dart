@@ -1,5 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-part of 'rechner_bloc.dart';
+part of 'app_bloc.dart';
 
 @immutable
 abstract class AppEvent {}

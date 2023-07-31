@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rechnen_spiel/Widgets/main_seite/giving-answer/answer-sheet.dart';
-import 'package:rechnen_spiel/bloc/hilf_functions.dart';
-import 'package:rechnen_spiel/bloc/rechner_bloc.dart';
+import 'package:rechnen_spiel/bloc/help_functions.dart';
+import 'package:rechnen_spiel/bloc/app_bloc.dart';
 
 class AntwortEingabe extends StatelessWidget {
   const AntwortEingabe({Key? key}) : super(key: key);
