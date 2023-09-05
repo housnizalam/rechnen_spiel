@@ -10,7 +10,7 @@ class AppState {
   final String? _answer;
   final bool _isAskGived;
   final bool _isAnswerGived;
-  final String _calcOperation;
+  final CalcOperation? _calcOperation;
   final int _operationenIndex;
   final int _maxStageAdition;
   final int _maxStageSubtraction;
@@ -37,7 +37,7 @@ class AppState {
     String? answer ,
     bool isAskGived = false,
     bool isAnswerGived = false,
-    String calcOperation = '+',
+    CalcOperation? calcOperation ,
     int operationenIndex = 0,
     int maxStageAdition = 0,
     int maxStageSubtraction = 0,
@@ -84,7 +84,7 @@ class AppState {
   String? get answer => _answer;
   bool get isAskGived => _isAskGived;
   bool get isAnswerGived => _isAnswerGived;
-  String get calcOperation => _calcOperation;
+  CalcOperation? get calcOperation => _calcOperation;
   int get operationenIndex => _operationenIndex;
   int get maxStageAdition => _maxStageAdition;
   int get maxStageSubtraction => _maxStageSubtraction;
@@ -109,7 +109,7 @@ class AppState {
     String? Function()? answer,
     bool Function()? isAskGived,
     bool Function()? isAnswerGived,
-    String Function()? calcOperation,
+    CalcOperation? Function()? calcOperation,
     int Function()? operationsIndex,
     int Function()? maxStageAdition,
     int Function()? maxStageSubtraction,

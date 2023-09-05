@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:rechnen_spiel/bloc/app_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../bloc/app_bloc.dart';
 
 class RechnungsDauer extends StatelessWidget {
   const RechnungsDauer({Key? key}) : super(key: key);
@@ -13,8 +14,11 @@ class RechnungsDauer extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: Center(
-            child: Text('${(state.period / 1000).toStringAsFixed(2)} Sec',
-                style: const TextStyle(color: Colors.amber, fontSize: 30, fontWeight: FontWeight.bold)),
+            child: Text('${state.period} Sec',
+                style: const TextStyle(
+                    color: Colors.amber,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold)),
           ),
         );
       },

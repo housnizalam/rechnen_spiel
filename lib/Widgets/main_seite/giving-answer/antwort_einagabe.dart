@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rechnen_spiel/Widgets/main_seite/giving-answer/answer-sheet.dart';
-import 'package:rechnen_spiel/bloc/help_functions.dart';
-import 'package:rechnen_spiel/bloc/app_bloc.dart';
+
+import '../../../bloc/app_bloc.dart';
+import '../../../bloc/help_functions.dart';
+import 'answer-sheet.dart';
 
 class AntwortEingabe extends StatelessWidget {
   const AntwortEingabe({Key? key}) : super(key: key);
@@ -14,19 +15,32 @@ class AntwortEingabe extends StatelessWidget {
       builder: (context, state) {
         List<int> answers = [0, 0, 0, 0];
         if (state.firstNumber != null && state.secondNumber != null) {
-           answers = getAnswersList(state.firstNumber!, state.secondNumber!);
+          answers =
+              getAnswersList(state.firstNumber!, state.secondNumber!, state);
         }
 
-        return Expanded(
-          child: Column(
-            children: [
-              Expanded(child: AnswerSheet(answer: answers[0])),
-              Expanded(child: AnswerSheet(answer: answers[1])),
-              Expanded(child: AnswerSheet(answer: answers[2])),
-              Expanded(child: AnswerSheet(answer: answers[3])),
-            ],
-          ),
-        );
+        return state.trueAnswers == 8 ||
+                state.allAnswers - state.trueAnswers > 2
+            ? Expanded(
+                child: Column(
+                  children: [
+                    Expanded(child: Container()),
+                    Expanded(child: Container()),
+                    Expanded(child: Container()),
+                    Expanded(child: Container()),
+                  ],
+                ),
+              )
+            : Expanded(
+                child: Column(
+                  children: [
+                    Expanded(child: AnswerSheet(answer: answers[0])),
+                    Expanded(child: AnswerSheet(answer: answers[1])),
+                    Expanded(child: AnswerSheet(answer: answers[2])),
+                    Expanded(child: AnswerSheet(answer: answers[3])),
+                  ],
+                ),
+              );
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rechnen_spiel/bloc/app_bloc.dart';
+
+import '../../../bloc/app_bloc.dart';
 
 class AnswerSheet extends StatelessWidget {
   final int answer;
@@ -28,14 +29,17 @@ class AnswerSheet extends StatelessWidget {
                       child: Center(
                           child: Text(
                         answer.toString(),
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       )),
                     ),
                   ),
                 ),
                 onTap: () {
-                  if (!state.valuation.contains('failed') && !state.valuation.contains('wins')) {
-                    BlocProvider.of<AppBloc>(context).add(TestingEvent(answer: answer));
+                  if (!state.valuation.contains('failed') &&
+                      !state.valuation.contains('wins')) {
+                    BlocProvider.of<AppBloc>(context)
+                        .add(TestingEvent(answer: answer));
                     BlocProvider.of<AppBloc>(context).add(NextTaskEvent());
                     BlocProvider.of<AppBloc>(context).add(StartGameEvent());
                   }

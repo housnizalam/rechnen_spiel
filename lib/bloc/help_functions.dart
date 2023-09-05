@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:rechnen_spiel/bloc/global_variablen.dart';
-import 'package:rechnen_spiel/bloc/app_bloc.dart';
+import 'app_bloc.dart';
+import 'global_variablen.dart';
 
 int gibUnBrimeNummer(AppState state) {
   List<int> listUnbrime = [];
@@ -35,17 +35,21 @@ int gibPassendeTeilNummer(int firstNumber, int actualStageSectioning) {
 }
 
 bool answerValuation(AppState state, TestingEvent event) {
-  if ((state.calcOperation == '+' && event.answer == state.firstNumber! + state.secondNumber!) ||
-      (state.calcOperation == '-' && event.answer == state.firstNumber! - state.secondNumber!) ||
-      (state.calcOperation == '*' && event.answer == state.firstNumber! * state.secondNumber!) ||
-      (state.calcOperation == '/' && event.answer == state.firstNumber! / state.secondNumber!)) {
+  if ((state.calcOperation!.operation == '+' &&
+          event.answer == state.firstNumber! + state.secondNumber!) ||
+      (state.calcOperation!.operation == '-' &&
+          event.answer == state.firstNumber! - state.secondNumber!) ||
+      (state.calcOperation!.operation == '*' &&
+          event.answer == state.firstNumber! * state.secondNumber!) ||
+      (state.calcOperation!.operation == '/' &&
+          event.answer == state.firstNumber! / state.secondNumber!)) {
     return true;
   }
   return false;
 }
 
-List<int> getAnswersList(int firstNumber, int secondNumber) {
-  int trueAnswer = firstNumber + secondNumber;
+List<int> getAnswersList(int firstNumber, int secondNumber, AppState appstate) {
+  int trueAnswer = appstate.calcOperation!.calculate(firstNumber, secondNumber);
   List<int> wrongAnswers = [];
   List<int> result = [trueAnswer];
   int choosedNumber = 0;
@@ -59,6 +63,36 @@ List<int> getAnswersList(int firstNumber, int secondNumber) {
     wrongAnswers.remove(choosedNumber);
   }
   result.sort();
-  print(result);
+  return result;
+}
+
+String numberToOperation(String operation, int number, AppState state) {
+  String result = '';
+  int firstnumber;
+  int secondnumber;
+  if (operation == '+') {
+    secondnumber = Random().nextInt(stages[state.stage]);
+    firstnumber = number - secondnumber;
+    result = '$firstnumber+$secondnumber';
+    return result;
+  }
+  if (operation == '-') {
+    secondnumber = Random().nextInt(stages[state.stage]);
+    firstnumber = number + secondnumber;
+    result = '$firstnumber-$secondnumber';
+    return result;
+  }
+  if (operation == '*') {
+    List<int> sutable = [];
+    for (int i = 1; i <= number; i++) {
+      if (number % i == 0) {
+        sutable.add(i);
+      }
+    }
+    secondnumber = sutable[Random().nextInt(sutable.length)];
+    firstnumber = number ~/ secondnumber;
+    result = result = '$firstnumber*$secondnumber';
+    return result;
+  }
   return result;
 }

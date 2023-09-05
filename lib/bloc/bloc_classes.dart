@@ -7,18 +7,18 @@ class Player {
   int maxStageSubtruction = 0;
   int maxStageMultiplication = 0;
   int maxStageSection = 0;
-  CalcOperation adition = CalcOperation('+');
-  CalcOperation subtraction = CalcOperation('-');
-  CalcOperation multiblication = CalcOperation('*');
-  CalcOperation sectioning = CalcOperation('/');
+
+  // CalcOperation adition = CalcOperation('+');
+  // CalcOperation subtraction = CalcOperation('-');
+  // CalcOperation multiblication = CalcOperation('*');
+  // CalcOperation sectioning = CalcOperation('/');
 }
 
 class CalcOperation {
   String operation;
   CalcOperation(this.operation);
   OperationStage operationStage = OperationStage();
-  int maxStage = 0;
-  List<int> stages = [];
+  // List<int> stages = [];
   // int stage1 = 0;
   // int stage2 = 0;
   // int stage3 = 0;
@@ -32,7 +32,7 @@ class CalcOperation {
   // int stage11 = 0;
   // int stage12 = 0;
 
-  int? calculate(int firstNumber, int secondNumber) {
+  int calculate(int firstNumber, int secondNumber) {
     if (operation == '+') {
       return firstNumber + secondNumber;
     }
@@ -43,9 +43,9 @@ class CalcOperation {
       return firstNumber * secondNumber;
     }
     if (operation == '/') {
-      return firstNumber / secondNumber as int;
+      return (firstNumber / secondNumber).ceil();
     }
-    return null;
+    return 0;
   }
 }
 

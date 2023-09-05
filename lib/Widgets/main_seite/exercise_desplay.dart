@@ -1,6 +1,9 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rechnen_spiel/bloc/app_bloc.dart';
+
+import '../../bloc/app_bloc.dart';
 
 class AufgabeDarstellung extends StatelessWidget {
   const AufgabeDarstellung({Key? key}) : super(key: key);
@@ -15,7 +18,7 @@ class AufgabeDarstellung extends StatelessWidget {
           child: state.valuation.contains('failed') || state.valuation.contains('wins') || state.firstNumber == null
               ? Container()
               : Text(
-                  '${state.firstNumber} ${state.calcOperation} ${state.secondNumber}',
+                  '${state.firstNumber} ${state.calcOperation!.operation} ${state.secondNumber}',
                   style: const TextStyle(color: Colors.amber, fontSize: 40, fontWeight: FontWeight.bold),
                 ),
         );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rechnen_spiel/bloc/app_bloc.dart';
+import 'package:rechnen_spiel/bloc/help_functions.dart';
+
+import '../../bloc/app_bloc.dart';
 
 class ApBar extends StatelessWidget {
   const ApBar({super.key});
@@ -11,12 +13,18 @@ class ApBar extends StatelessWidget {
       listener: (context, state) {},
       builder: (context, state) {
         return AppBar(
-          title:
-              Text(state.title, style: const TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
+          title: Text(state.title,
+              style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold)),
           actions: [
             Center(
-              child: Text(state.calcOperation,
-                  style: const TextStyle(color: Colors.black, fontSize: 40, fontWeight: FontWeight.bold)),
+              child: Text(state.calcOperation!.operation,
+                  style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold)),
             ),
             Center(
                 child: IconButton(
@@ -25,6 +33,8 @@ class ApBar extends StatelessWidget {
                 color: Colors.black,
               ),
               onPressed: () {
+                print(numberToOperation('+', 20, state));
+                print('hallo');
                 BlocProvider.of<AppBloc>(context).add(ChooseOperationEvent());
               },
             ))

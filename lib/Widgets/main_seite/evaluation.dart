@@ -1,7 +1,10 @@
+
+        
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rechnen_spiel/bloc/app_bloc.dart';
-        
+
+import '../../bloc/app_bloc.dart';
 
 class Bewertung extends StatelessWidget {
   const Bewertung({Key? key}) : super(key: key);
