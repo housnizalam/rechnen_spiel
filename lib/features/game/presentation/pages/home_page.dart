@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'Widgets/main_seite/evaluation.dart';
-import 'Widgets/main_seite/exercise_desplay.dart';
-import 'Widgets/main_seite/game_controller.dart';
-import 'Widgets/main_seite/giving-answer/antwort_einagabe.dart';
-import 'Widgets/main_seite/name.dart';
-import 'Widgets/main_seite/periode_desplay.dart';
-import 'Widgets/main_seite/stage_display.dart';
-import 'providers/game_notifier.dart';
+import '../../state/game_notifier.dart';
+import '../widgets/answer_input.dart';
+import '../widgets/evaluation.dart';
+import '../widgets/exercise_display.dart';
+import '../widgets/game_controller.dart';
+import '../widgets/name_input.dart';
+import '../widgets/stage_display.dart';
+import '../widgets/timer_display.dart';
 
 class MyHomePage extends ConsumerWidget {
   const MyHomePage({super.key});

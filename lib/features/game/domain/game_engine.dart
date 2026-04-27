@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import '../bloc/bloc_classes.dart';
-import '../bloc/global_variablen.dart';
+import '../../../core/constants/game_constants.dart';
+import 'game_models.dart';
 
 class GeneratedQuestion {
   final int firstNumber;

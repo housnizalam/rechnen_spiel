@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/game_notifier.dart';
+import '../../state/game_notifier.dart';
 
 class NameGeber extends ConsumerWidget {
   const NameGeber({Key? key}) : super(key: key);

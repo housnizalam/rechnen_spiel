@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../bloc/bloc_classes.dart';
-import '../bloc/global_variablen.dart';
+import '../../../app/providers.dart';
+import '../../../core/constants/game_constants.dart';
 import '../domain/game_engine.dart';
-import 'app_providers.dart';
+import '../domain/game_models.dart';
 
 enum GameStatus { idle, playing, won, failed }
 

@@ -1,12 +1,12 @@
 import 'dart:math';
 
-import 'bloc_classes.dart';
+import '../../features/game/domain/game_models.dart';
 
 List<String> calcOperationsList = ['+', '-', '*', '/'];
 List<int> stages = [11, 21, 31, 51, 61, 101, 201, 301, 401, 501, 601, 1001];
 DateTime? now;
 Random random = Random();
-var calqOperation= CalcOperation(calcOperationsList[0]);
+var calqOperation = CalcOperation(calcOperationsList[0]);
 
 // import 'package:rechnen_spiel/bloc/bloc_classes.dart';
 
