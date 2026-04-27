@@ -71,7 +71,7 @@
 
 // pruf() {
 //   if (dieAntwort == null) {
-//   } else if (antwortBewertung()) {
+//   } else if (antwortEvaluation()) {
 //     if (startZeit != null) {
 //       now = DateTime.now();
 //       dauer += now.difference(startZeit!).inMilliseconds;

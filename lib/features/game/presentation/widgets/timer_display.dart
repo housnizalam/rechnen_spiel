@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
 
-class RechnungsDauer extends ConsumerWidget {
-  const RechnungsDauer({Key? key}) : super(key: key);
+/// Shows the recorded stage duration in seconds.
+class TimerDisplay extends ConsumerWidget {
+  const TimerDisplay({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -10,6 +10,7 @@ import '../widgets/name_input.dart';
 import '../widgets/stage_display.dart';
 import '../widgets/timer_display.dart';
 
+/// Main game screen that composes controls, exercise, answers, and progress UI.
 class MyHomePage extends ConsumerWidget {
   const MyHomePage({super.key});
 
@@ -69,7 +70,7 @@ class MyHomePage extends ConsumerWidget {
           ),
         ),
         child: state.player == null
-            ? const NameGeber()
+            ? const NameInput()
             : Container(
                 height: double.infinity,
                 decoration: const BoxDecoration(
@@ -97,12 +98,12 @@ class MyHomePage extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    GibBerechnung(),
-                    AufgabeDarstellung(),
-                    AntwortEingabe(),
-                    Bewertung(),
-                    // Naechst(),
-                    RechnungsDauer(),
+                    GameController(),
+                    ExerciseDisplay(),
+                    AnswerInput(),
+                    Evaluation(),
+                    // NextButton(),
+                    TimerDisplay(),
                     StageDisplay()
                   ],
                 ),

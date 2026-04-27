@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
 
-class Naechst extends ConsumerWidget {
-  const Naechst({Key? key}) : super(key: key);
+class NextButton extends ConsumerWidget {
+  const NextButton({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,7 +18,7 @@ class Naechst extends ConsumerWidget {
             padding: const EdgeInsets.all(8.0),
             child: ElevatedButton(
                 style: ButtonStyle(
-                    backgroundColor: state.isAnswerGived
+                    backgroundColor: state.isAnswerGiven
                         ? const WidgetStatePropertyAll(Colors.red)
                         : const WidgetStatePropertyAll(
                             Color.fromARGB(0, 158, 158, 158))),

@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 
+/// Player profile with unlocked maximum stage per arithmetic operation.
 class Player {
   String? name;
   Player({this.name});
@@ -14,9 +15,13 @@ class Player {
   // CalcOperation sectioning = CalcOperation('/');
 }
 
+/// Wraps an arithmetic operator and provides result calculation.
 class CalcOperation {
+  /// One of `+`, `-`, `*`, `/`.
   String operation;
   CalcOperation(this.operation);
+
+  /// Placeholder for operation-specific stage metadata.
   OperationStage operationStage = OperationStage();
   // List<int> stages = [];
   // int stage1 = 0;
@@ -32,6 +37,7 @@ class CalcOperation {
   // int stage11 = 0;
   // int stage12 = 0;
 
+  /// Computes the result for the configured [operation].
   int calculate(int firstNumber, int secondNumber) {
     if (operation == '+') {
       return firstNumber + secondNumber;
@@ -49,6 +55,7 @@ class CalcOperation {
   }
 }
 
+/// Stores stage number and best score history for an operation.
 class OperationStage {
   int stageNumber = 0;
   List<int> bestScores = [];

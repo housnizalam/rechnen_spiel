@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
 
-class AufgabeDarstellung extends ConsumerWidget {
-  const AufgabeDarstellung({Key? key}) : super(key: key);
+/// Shows the active arithmetic expression while a round is in progress.
+class ExerciseDisplay extends ConsumerWidget {
+  const ExerciseDisplay({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

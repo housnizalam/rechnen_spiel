@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
 
-class GibBerechnung extends ConsumerWidget {
-  const GibBerechnung({Key? key}) : super(key: key);
+/// Main action button that starts gameplay, repeats stage, or advances stage.
+class GameController extends ConsumerWidget {
+  const GameController({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

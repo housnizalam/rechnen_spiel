@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/game_notifier.dart';
 import 'answer_sheet.dart';
 
-class AntwortEingabe extends ConsumerWidget {
-  const AntwortEingabe({Key? key}) : super(key: key);
+/// Renders the answer area with four selectable options.
+///
+/// The area is hidden once the round has reached win or fail thresholds.
+class AnswerInput extends ConsumerWidget {
+  const AnswerInput({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

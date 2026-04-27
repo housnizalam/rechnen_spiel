@@ -3,10 +3,18 @@ import 'dart:math';
 import '../../../core/constants/game_constants.dart';
 import 'game_models.dart';
 
+/// Value object representing one generated exercise and its answer choices.
 class GeneratedQuestion {
+  /// Left-hand operand.
   final int firstNumber;
+
+  /// Right-hand operand.
   final int secondNumber;
+
+  /// Expected result for this exercise.
   final int correctAnswer;
+
+  /// Four options shown to the player, including [correctAnswer].
   final List<int> answerOptions;
 
   const GeneratedQuestion({
@@ -29,9 +37,19 @@ class _DivisionQuestion {
   });
 }
 
+/// Pure domain service that creates arithmetic exercises.
+///
+/// Operation behavior:
+/// - `+`: random addends within stage bounds.
+/// - `-`: operands are ordered to keep non-negative results.
+/// - `*`: random factors within stage bounds.
+/// - `/`: numbers are constructed so division is always exact.
 class GameEngine {
   final Random _random = Random();
 
+  /// Generates one question for the provided operation and stage.
+  ///
+  /// The stage index is clamped to valid bounds before generating numbers.
   GeneratedQuestion generateQuestion({
     required String operation,
     required int stageIndex,
@@ -86,6 +104,9 @@ class GameEngine {
     );
   }
 
+  /// Builds four unique answer options around the correct value.
+  ///
+  /// The result always contains [correctAnswer] and is shuffled for display.
   List<int> generateAnswerOptions(int correctAnswer) {
     final options = <int>{correctAnswer};
     int delta = 1;
@@ -102,6 +123,12 @@ class GameEngine {
     return result;
   }
 
+  /// Generates a division tuple where `firstNumber / secondNumber` is integer.
+  ///
+  /// Guarantees:
+  /// - `secondNumber` is never zero.
+  /// - `firstNumber` is divisible by `secondNumber`.
+  /// - `correctAnswer` is an integer quotient.
   _DivisionQuestion _generateDivisionQuestion(int maxNumber) {
     final safeMax = max(maxNumber, 2);
 

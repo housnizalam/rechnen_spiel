@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
 
-class NameGeber extends ConsumerWidget {
-  const NameGeber({Key? key}) : super(key: key);
+/// Name entry field shown before gameplay starts.
+class NameInput extends ConsumerWidget {
+  const NameInput({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
 
+/// Single tappable answer option card.
+///
+/// On tap, it performs the standard flow:
+/// submit answer -> prepare next question -> start next question.
 class AnswerSheet extends ConsumerWidget {
   final int answer;
   const AnswerSheet({
