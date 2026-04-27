@@ -1,67 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../bloc/app_bloc.dart';
+import '../../providers/game_notifier.dart';
 
-class Naechst extends StatelessWidget {
+class Naechst extends ConsumerWidget {
   const Naechst({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AppBloc, AppState>(
-      builder: (context, state) {
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                    style: ButtonStyle(
-                        backgroundColor: state.isAnswerGived
-                            ? const WidgetStatePropertyAll(Colors.red)
-                            : const WidgetStatePropertyAll(
-                                Color.fromARGB(0, 158, 158, 158))),
-                    onPressed: () {
-                      state.trueAnswers < 8 && state.allAnswers < 10 ||
-                              state.trueAnswers < 8 && state.allAnswers > 9
-                          ? BlocProvider.of<AppBloc>(context)
-                              .add(NextTaskEvent())
-                          : BlocProvider.of<AppBloc>(context)
-                              .add(WinToNextStageEvent());
-                    },
-                    child: state.trueAnswers < 8 && state.allAnswers > 9
-                        ? const Text('Stufe Wiederholen',
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(gameNotifierProvider);
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: state.isAnswerGived
+                        ? const WidgetStatePropertyAll(Colors.red)
+                        : const WidgetStatePropertyAll(
+                            Color.fromARGB(0, 158, 158, 158))),
+                onPressed: () {
+                  if (state.trueAnswers < 8 && state.allAnswers < 10 ||
+                      state.trueAnswers < 8 && state.allAnswers > 9) {
+                    ref.read(gameNotifierProvider.notifier).nextQuestion();
+                  } else {
+                    ref.read(gameNotifierProvider.notifier).winToNextStage();
+                  }
+                },
+                child: state.trueAnswers < 8 && state.allAnswers > 9
+                    ? const Text('Stufe Wiederholen',
+                        style: TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold))
+                    : state.trueAnswers < 8
+                        ? const Text('Nächste Aufgabe',
                             style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold))
-                        : state.trueAnswers < 8
-                            ? const Text('Nächste Aufgabe',
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold))
-                            : const Text('Nächste Stufe',
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold))),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                    onPressed: () {
-                      BlocProvider.of<AppBloc>(context)
-                          .add(WinToNextStageEvent());
-                    },
-                    child: const Icon(
-                      Icons.refresh,
-                      color: Colors.black,
-                    )),
-              ),
-            ],
+                        : const Text('Nächste Stufe',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold))),
           ),
-        );
-      },
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+                onPressed: () {
+                  ref.read(gameNotifierProvider.notifier).winToNextStage();
+                },
+                child: const Icon(
+                  Icons.refresh,
+                  color: Colors.black,
+                )),
+          ),
+        ],
+      ),
     );
   }
 }

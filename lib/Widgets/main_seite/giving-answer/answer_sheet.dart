@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../bloc/app_bloc.dart';
+import '../../../providers/game_notifier.dart';
 
-class AnswerSheet extends StatelessWidget {
+class AnswerSheet extends ConsumerWidget {
   final int answer;
   const AnswerSheet({
     super.key,
@@ -11,39 +11,36 @@ class AnswerSheet extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AppBloc, AppState>(
-      builder: (context, state) {
-        double width = MediaQuery.of(context).size.width;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(gameNotifierProvider);
+    final gameNotifier = ref.read(gameNotifierProvider.notifier);
+    double width = MediaQuery.of(context).size.width;
 
-        return state.firstNumber != null && state.secondNumber != null
-            ? InkWell(
-                child: SizedBox(
-                  width: width * 0.5,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                          child: Text(
-                        answer.toString(),
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      )),
-                    ),
-                  ),
+    return state.firstNumber != null && state.secondNumber != null
+        ? InkWell(
+            child: SizedBox(
+              width: width * 0.5,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Center(
+                      child: Text(
+                    answer.toString(),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                  )),
                 ),
-                onTap: () {
-                  if (state.status != GameStatus.failed &&
-                      state.status != GameStatus.won) {
-                    BlocProvider.of<AppBloc>(context)
-                        .add(TestingEvent(answer: answer));
-                    BlocProvider.of<AppBloc>(context).add(NextTaskEvent());
-                    BlocProvider.of<AppBloc>(context).add(StartGameEvent());
-                  }
-                },
-              )
-            : Container();
-      },
-    );
+              ),
+            ),
+            onTap: () {
+              if (state.status != GameStatus.failed &&
+                  state.status != GameStatus.won) {
+                gameNotifier.submitAnswer(answer);
+                gameNotifier.nextQuestion();
+                gameNotifier.startGame();
+              }
+            },
+          )
+        : Container();
   }
 }

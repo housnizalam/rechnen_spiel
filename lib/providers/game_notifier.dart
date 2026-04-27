@@ -1,46 +1,146 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../bloc/bloc_classes.dart';
+import '../bloc/global_variablen.dart';
 import '../domain/game_engine.dart';
+import 'app_providers.dart';
 
-import 'bloc_classes.dart';
-import 'global_variablen.dart';
+enum GameStatus { idle, playing, won, failed }
 
-part 'app_event.dart';
-part 'app_state.dart';
+class GameState {
+  final int stage;
+  final String title;
+  final DateTime? startTime;
+  final String? answer;
+  final bool isAskGived;
+  final bool isAnswerGived;
+  final CalcOperation? calcOperation;
+  final int operationenIndex;
+  final int actualStageAdition;
+  final int actualStageSubtruction;
+  final int actualStageMultiplication;
+  final int actualStageSectioning;
+  final int? firstNumber;
+  final int? secondNumber;
+  final int correctAnswer;
+  final List<int> answerOptions;
+  final String valuation;
+  final int trueAnswers;
+  final int allAnswers;
+  final int period;
+  final GameStatus status;
+  final Player? player;
 
-class AppBloc extends Bloc<AppEvent, AppState> {
-  final GameEngine _gameEngine = GameEngine();
+  const GameState({
+    this.stage = 0,
+    this.title = '',
+    this.startTime,
+    this.answer,
+    this.isAskGived = false,
+    this.isAnswerGived = false,
+    this.calcOperation,
+    this.operationenIndex = 0,
+    this.actualStageAdition = 0,
+    this.actualStageSubtruction = 0,
+    this.actualStageMultiplication = 0,
+    this.actualStageSectioning = 0,
+    this.firstNumber,
+    this.secondNumber,
+    this.correctAnswer = 0,
+    this.answerOptions = const [],
+    this.valuation = '',
+    this.trueAnswers = 0,
+    this.allAnswers = 0,
+    this.period = 0,
+    this.status = GameStatus.idle,
+    this.player,
+  });
 
-  AppBloc() : super(const AppState()) {
-    on<ChooseOperationEvent>(chooseOperation);
-    on<GiveNameEvent>(giveName);
-    on<StartGameEvent>(startGameEvent);
-    on<NextStageEvent>(nextStage);
-    on<NextTaskEvent>(nextTask);
-    on<PreviosStageEvent>(previosStage);
-    on<RepeatStageEvent>(repeatStage);
-    on<TestingEvent>(testing);
-    // on<WinNewStageEvent>(winNewStage);
-    on<WinToNextStageEvent>(winToNextStage);
-    //###############################################################################
+  GameState copyWith({
+    int Function()? stage,
+    String Function()? title,
+    DateTime? Function()? startTime,
+    String? Function()? answer,
+    bool Function()? isAskGived,
+    bool Function()? isAnswerGived,
+    CalcOperation? Function()? calcOperation,
+    int Function()? operationsIndex,
+    int Function()? actualStageAdition,
+    int Function()? actualStageSubtruction,
+    int Function()? actualStageMultiplication,
+    int Function()? actualStageSectioning,
+    int? Function()? firstNumber,
+    int? Function()? secondNumber,
+    int Function()? correctAnswer,
+    List<int> Function()? answerOptions,
+    String Function()? valuation,
+    int Function()? trueAnswers,
+    int Function()? allAnswers,
+    int Function()? period,
+    GameStatus Function()? status,
+    Player? Function()? player,
+  }) {
+    return GameState(
+      stage: stage == null ? this.stage : stage(),
+      title: title == null ? this.title : title(),
+      startTime: startTime == null ? this.startTime : startTime(),
+      answer: answer == null ? this.answer : answer(),
+      isAskGived: isAskGived == null ? this.isAskGived : isAskGived(),
+      isAnswerGived:
+          isAnswerGived == null ? this.isAnswerGived : isAnswerGived(),
+      calcOperation:
+          calcOperation == null ? this.calcOperation : calcOperation(),
+      operationenIndex:
+          operationsIndex == null ? operationenIndex : operationsIndex(),
+      actualStageAdition: actualStageAdition == null
+          ? this.actualStageAdition
+          : actualStageAdition(),
+      actualStageSubtruction: actualStageSubtruction == null
+          ? this.actualStageSubtruction
+          : actualStageSubtruction(),
+      actualStageMultiplication: actualStageMultiplication == null
+          ? this.actualStageMultiplication
+          : actualStageMultiplication(),
+      actualStageSectioning: actualStageSectioning == null
+          ? this.actualStageSectioning
+          : actualStageSectioning(),
+      firstNumber: firstNumber == null ? this.firstNumber : firstNumber(),
+      secondNumber: secondNumber == null ? this.secondNumber : secondNumber(),
+      correctAnswer:
+          correctAnswer == null ? this.correctAnswer : correctAnswer(),
+      answerOptions:
+          answerOptions == null ? this.answerOptions : answerOptions(),
+      valuation: valuation == null ? this.valuation : valuation(),
+      trueAnswers: trueAnswers == null ? this.trueAnswers : trueAnswers(),
+      allAnswers: allAnswers == null ? this.allAnswers : allAnswers(),
+      period: period == null ? this.period : period(),
+      status: status == null ? this.status : status(),
+      player: player == null ? this.player : player(),
+    );
   }
-  chooseOperation(ChooseOperationEvent event, emit) {
+}
+
+class GameNotifier extends StateNotifier<GameState> {
+  final GameEngine gameEngine;
+
+  GameNotifier(this.gameEngine) : super(const GameState());
+
+  void chooseOperation() {
     int operationsIndex = state.operationenIndex;
     if (operationsIndex == 3) {
       operationsIndex = 0;
     } else {
       operationsIndex++;
     }
-    CalcOperation calcOperation =
-        CalcOperation(calcOperationsList[operationsIndex]);
-    final newState = state.copyWith(
+    final calcOperation = CalcOperation(calcOperationsList[operationsIndex]);
+    state = state.copyWith(
       operationsIndex: () => operationsIndex,
       calcOperation: () => calcOperation,
       allAnswers: () => 0,
       trueAnswers: () => 0,
       answer: () => null,
       isAskGived: () => false,
-      isAnswerGived: () => true,
+      isAnswerGived: () => false,
       valuation: () => '',
       status: () => GameStatus.idle,
       firstNumber: () => null,
@@ -49,39 +149,36 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       answerOptions: () => const [],
       period: () => 0,
     );
-
-    emit(newState);
   }
 
-  giveName(GiveNameEvent event, emit) {
-    final player = Player(name: event.name);
+  void giveName(String name) {
+    final player = Player(name: name);
     final calcOperation = CalcOperation('+');
-    final newState = state.copyWith(
+    state = state.copyWith(
       player: () => player,
       calcOperation: () => calcOperation,
       status: () => GameStatus.idle,
     );
-    emit(newState);
   }
 
-  nextStage(NextStageEvent event, emit) {
-    int actualStageAdition = state._actualStageAdition;
-    int actualStageSubtraction = state._actualStageSubtruction;
-    int actualStageMultiblication = state._actualStageMultiplication;
-    int actualStageSectioning = state._actualStageSectioning;
+  void nextStage() {
+    int actualStageAdition = state.actualStageAdition;
+    int actualStageSubtraction = state.actualStageSubtruction;
+    int actualStageMultiplication = state.actualStageMultiplication;
+    int actualStageSectioning = state.actualStageSectioning;
     if (state.calcOperation!.operation == '+') {
       actualStageAdition++;
     } else if (state.calcOperation!.operation == '-') {
       actualStageSubtraction++;
     } else if (state.calcOperation!.operation == '*') {
-      actualStageMultiblication++;
+      actualStageMultiplication++;
     } else if (state.calcOperation!.operation == '/') {
       actualStageSectioning++;
     }
-    final newState = state.copyWith(
+    state = state.copyWith(
       actualStageAdition: () => actualStageAdition,
       actualStageSubtruction: () => actualStageSubtraction,
-      actualStageMultiplication: () => actualStageMultiblication,
+      actualStageMultiplication: () => actualStageMultiplication,
       actualStageSectioning: () => actualStageSectioning,
       isAskGived: () => false,
       allAnswers: () => 0,
@@ -95,45 +192,43 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       valuation: () => '',
       status: () => GameStatus.idle,
     );
-    emit(newState);
   }
 
-  nextTask(NextTaskEvent event, emit) {
+  void nextQuestion() {
     if (!state.isAnswerGived) {
-    } else {
-      final newState = state.copyWith(
-        isAskGived: () => true,
-        valuation: () => '${state.trueAnswers} / ${state.allAnswers}',
-        firstNumber: () => null,
-        secondNumber: () => null,
-        correctAnswer: () => 0,
-        answerOptions: () => const [],
-        answer: () => null,
-        isAnswerGived: () => false,
-        status: () => GameStatus.playing,
-      );
-      emit(newState);
+      return;
     }
+    state = state.copyWith(
+      isAskGived: () => false,
+      valuation: () => '${state.trueAnswers} / ${state.allAnswers}',
+      firstNumber: () => null,
+      secondNumber: () => null,
+      correctAnswer: () => 0,
+      answerOptions: () => const [],
+      answer: () => null,
+      isAnswerGived: () => false,
+      status: () => GameStatus.idle,
+    );
   }
 
-  previosStage(PreviosStageEvent event, emit) {
-    int actualStageAdition = state._actualStageAdition;
-    int actualStageSubtraction = state._actualStageSubtruction;
-    int actualStageMultiblication = state._actualStageMultiplication;
-    int actualStageSectioning = state._actualStageSectioning;
+  void previosStage() {
+    int actualStageAdition = state.actualStageAdition;
+    int actualStageSubtraction = state.actualStageSubtruction;
+    int actualStageMultiplication = state.actualStageMultiplication;
+    int actualStageSectioning = state.actualStageSectioning;
     if (state.calcOperation!.operation == '+') {
       actualStageAdition--;
     } else if (state.calcOperation!.operation == '-') {
       actualStageSubtraction--;
     } else if (state.calcOperation!.operation == '*') {
-      actualStageMultiblication--;
+      actualStageMultiplication--;
     } else if (state.calcOperation!.operation == '/') {
       actualStageSectioning--;
     }
-    final newState = state.copyWith(
+    state = state.copyWith(
       actualStageAdition: () => actualStageAdition,
       actualStageSubtruction: () => actualStageSubtraction,
-      actualStageMultiplication: () => actualStageMultiblication,
+      actualStageMultiplication: () => actualStageMultiplication,
       actualStageSectioning: () => actualStageSectioning,
       allAnswers: () => 0,
       trueAnswers: () => 0,
@@ -147,16 +242,15 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       valuation: () => '',
       status: () => GameStatus.idle,
     );
-    emit(newState);
   }
 
-  repeatStage(RepeatStageEvent event, emit) {
-    final generatedQuestion = _gameEngine.generateQuestion(
+  void repeatStage() {
+    final generatedQuestion = gameEngine.generateQuestion(
       operation: state.calcOperation!.operation,
       stageIndex: _activeStageIndex(),
       calcOperation: state.calcOperation!,
     );
-    final newState = state.copyWith(
+    state = state.copyWith(
       allAnswers: () => 0,
       trueAnswers: () => 0,
       valuation: () => '',
@@ -171,10 +265,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       startTime: () => DateTime.now(),
       status: () => GameStatus.playing,
     );
-    emit(newState);
   }
 
-  startGameEvent(StartGameEvent event, emit) {
+  void startGame() {
     DateTime startTime;
     if (state.startTime == null) {
       startTime = DateTime.now();
@@ -182,12 +275,12 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       startTime = state.startTime!;
     }
     if (!state.isAskGived) {
-      final generatedQuestion = _gameEngine.generateQuestion(
+      final generatedQuestion = gameEngine.generateQuestion(
         operation: state.calcOperation!.operation,
         stageIndex: _activeStageIndex(),
         calcOperation: state.calcOperation!,
       );
-      final newState = state.copyWith(
+      state = state.copyWith(
         firstNumber: () => generatedQuestion.firstNumber,
         secondNumber: () => generatedQuestion.secondNumber,
         correctAnswer: () => generatedQuestion.correctAnswer,
@@ -196,17 +289,18 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         startTime: () => startTime,
         status: () => GameStatus.playing,
       );
-
-      emit(newState);
     }
   }
 
-  testing(TestingEvent event, emit) {
+  void submitAnswer(int answer) {
+    if (state.firstNumber == null || state.secondNumber == null) {
+      return;
+    }
+
     int trueAnswers = state.trueAnswers;
     int allAnswers = state.allAnswers;
     String valuation = '';
-    if (event.answer == null) {
-    } else if (event.answer == state.correctAnswer) {
+    if (answer == state.correctAnswer) {
       trueAnswers++;
       allAnswers++;
       valuation = 'True Answer $trueAnswers / $allAnswers';
@@ -231,8 +325,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       }
       valuation = '${state.player!.name} wins';
       final period = DateTime.now().difference(state.startTime!).inSeconds;
-      final newState = state.copyWith(
+      state = state.copyWith(
         isAskGived: () => false,
+        isAnswerGived: () => true,
         allAnswers: () => allAnswers,
         trueAnswers: () => trueAnswers,
         valuation: () => valuation,
@@ -241,71 +336,39 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         period: () => period,
         player: () => player,
       );
-      emit(newState);
     } else if (allAnswers - trueAnswers > 2) {
       valuation = '${state.player!.name} failed';
-      final newState = state.copyWith(
+      state = state.copyWith(
         isAskGived: () => false,
+        isAnswerGived: () => true,
         allAnswers: () => allAnswers,
         trueAnswers: () => trueAnswers,
         valuation: () => valuation,
         status: () => GameStatus.failed,
       );
-      emit(newState);
     } else {
-      final newState = state.copyWith(
+      state = state.copyWith(
         isAskGived: () => false,
+        isAnswerGived: () => true,
         allAnswers: () => allAnswers,
         trueAnswers: () => trueAnswers,
         valuation: () => valuation,
         status: () => GameStatus.playing,
       );
-      emit(newState);
     }
   }
 
-  // winNewStage(WinNewStageEvent event, emit) {
-  //   if (state.richtigeAntworten > 7) {
-  //     if (state.stageAddieren + 1 < state.stages.length) {
-  //       if (state.rechengang == '+') {
-  //         // addiernStufen[stageAddieren].add(dauer);
-  //         state.stageAddieren++;
-  //         state.player.maxStageAddieren++;
-  //       } else if (state.rechengang == '-') {
-  //         // subtrahiernStufen[stageSubtrahieren].add(dauer);
-
-  //         state.stageSubtrahieren++;
-  //         state.player.maxStageSubtrahieren++;
-  //       } else if (state.rechengang == '*') {
-  //         // malenStufen[stageMalen].add(dauer);
-  //         state.stageMalen++;
-  //         state.player.maxStageMalen++;
-  //       } else if (state.rechengang == '/') {
-  //         // teilenStufen[stageTeilen].add(dauer);
-
-  //         state.stageTeilen++;
-  //         state.player.maxStageTeilen++;
-  //       }
-  //     }
-  //     state.alleAntworten = 0;
-  //     state.richtigeAntworten = 0;
-
-  //     state.dauer = 0;
-  //   }
-  //   emit(state);
-  // }
-
-  winToNextStage(WinToNextStageEvent event, emit) {
+  void winToNextStage() {
     if (state.trueAnswers > 7) {
-      Player? player = Player();
-      player.name = state.player!.name;
-      player.maxStageAdition = state.player!.maxStageAdition;
-      player.maxStageSubtruction = state.player!.maxStageSubtruction;
-      player.maxStageMultiplication = state.player!.maxStageMultiplication;
-      player.maxStageSection = state.player!.maxStageSection;
+      final player = Player()
+        ..name = state.player!.name
+        ..maxStageAdition = state.player!.maxStageAdition
+        ..maxStageSubtruction = state.player!.maxStageSubtruction
+        ..maxStageMultiplication = state.player!.maxStageMultiplication
+        ..maxStageSection = state.player!.maxStageSection;
       int stageAdition = state.actualStageAdition;
       int stageSubtruction = state.actualStageSubtruction;
-      int stageMultiplication = state._actualStageMultiplication;
+      int stageMultiplication = state.actualStageMultiplication;
       int stageSectioning = state.actualStageSectioning;
       if (state.calcOperation!.operation == '+' &&
           state.actualStageAdition + 1 < stages.length) {
@@ -324,7 +387,7 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         stageSectioning++;
         player.maxStageSection++;
       }
-      final newState = state.copyWith(
+      state = state.copyWith(
         player: () => player,
         actualStageAdition: () => stageAdition,
         actualStageSubtruction: () => stageSubtruction,
@@ -340,20 +403,26 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         answerOptions: () => const [],
         status: () => GameStatus.idle,
       );
-      emit(newState);
     }
   }
 
   int _activeStageIndex() {
+    final lastIndex = stages.length - 1;
     if (state.calcOperation!.operation == '+') {
-      return state.actualStageAdition;
+      return state.actualStageAdition.clamp(0, lastIndex);
     }
     if (state.calcOperation!.operation == '-') {
-      return state.actualStageSubtruction;
+      return state.actualStageSubtruction.clamp(0, lastIndex);
     }
     if (state.calcOperation!.operation == '*') {
-      return state.actualStageMultiplication;
+      return state.actualStageMultiplication.clamp(0, lastIndex);
     }
-    return state.actualStageSectioning;
+    return state.actualStageSectioning.clamp(0, lastIndex);
   }
 }
+
+final gameNotifierProvider =
+    StateNotifierProvider<GameNotifier, GameState>((ref) {
+  final engine = ref.read(gameEngineProvider);
+  return GameNotifier(engine);
+});

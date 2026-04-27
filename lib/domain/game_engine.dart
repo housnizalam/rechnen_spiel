@@ -17,25 +17,65 @@ class GeneratedQuestion {
   });
 }
 
+class _DivisionQuestion {
+  final int firstNumber;
+  final int secondNumber;
+  final int correctAnswer;
+
+  const _DivisionQuestion({
+    required this.firstNumber,
+    required this.secondNumber,
+    required this.correctAnswer,
+  });
+}
+
 class GameEngine {
+  final Random _random = Random();
+
   GeneratedQuestion generateQuestion({
     required String operation,
     required int stageIndex,
     required CalcOperation calcOperation,
   }) {
+    final safeStageIndex = stageIndex.clamp(0, stages.length - 1);
+    final maxNumber = stages[safeStageIndex];
     int firstNumber;
     int secondNumber;
+    int correctAnswer;
 
-    if (operation == '/') {
-      firstNumber = _generateCompositeNumber(stageIndex);
-      secondNumber = _generateDivisor(firstNumber, stageIndex);
-    } else {
-      final maxNumber = stages[stageIndex];
-      firstNumber = Random().nextInt(maxNumber);
-      secondNumber = Random().nextInt(maxNumber);
+    switch (operation) {
+      case '+':
+        firstNumber = _random.nextInt(maxNumber);
+        secondNumber = _random.nextInt(maxNumber);
+        correctAnswer = firstNumber + secondNumber;
+        break;
+      case '-':
+        firstNumber = _random.nextInt(maxNumber);
+        secondNumber = _random.nextInt(maxNumber);
+        if (secondNumber > firstNumber) {
+          final temp = firstNumber;
+          firstNumber = secondNumber;
+          secondNumber = temp;
+        }
+        correctAnswer = firstNumber - secondNumber;
+        break;
+      case '*':
+        firstNumber = _random.nextInt(maxNumber);
+        secondNumber = _random.nextInt(maxNumber);
+        correctAnswer = firstNumber * secondNumber;
+        break;
+      case '/':
+        final generatedDivision = _generateDivisionQuestion(maxNumber);
+        firstNumber = generatedDivision.firstNumber;
+        secondNumber = generatedDivision.secondNumber;
+        correctAnswer = generatedDivision.correctAnswer;
+        break;
+      default:
+        firstNumber = _random.nextInt(maxNumber);
+        secondNumber = _random.nextInt(maxNumber);
+        correctAnswer = calcOperation.calculate(firstNumber, secondNumber);
     }
 
-    final correctAnswer = calcOperation.calculate(firstNumber, secondNumber);
     final answerOptions = generateAnswerOptions(correctAnswer);
 
     return GeneratedQuestion(
@@ -47,47 +87,38 @@ class GameEngine {
   }
 
   List<int> generateAnswerOptions(int correctAnswer) {
-    final wrongAnswers = <int>[];
-    final result = <int>[correctAnswer];
+    final options = <int>{correctAnswer};
+    int delta = 1;
 
-    for (int i = 1; i < 11; i++) {
-      wrongAnswers.add(correctAnswer + i);
-      wrongAnswers.add(correctAnswer - i);
+    while (options.length < 4) {
+      options.add(correctAnswer + delta);
+      if (options.length < 4) {
+        options.add(correctAnswer - delta);
+      }
+      delta++;
     }
 
-    for (int i = 0; i < 3; i++) {
-      final chosenNumber = wrongAnswers[Random().nextInt(wrongAnswers.length)];
-      result.add(chosenNumber);
-      wrongAnswers.remove(chosenNumber);
-    }
-
-    result.sort();
+    final result = options.toList()..shuffle(_random);
     return result;
   }
 
-  int _generateCompositeNumber(int stageIndex) {
-    final nonPrimeNumbers = <int>[];
-    for (int i = 2; i < stages[stageIndex]; i++) {
-      int counter = 0;
-      for (int j = 1; j < i; j++) {
-        if (i % j == 0) {
-          counter++;
-        }
-      }
-      if (counter > 1) {
-        nonPrimeNumbers.add(i);
-      }
-    }
-    return nonPrimeNumbers[Random().nextInt(nonPrimeNumbers.length)];
-  }
+  _DivisionQuestion _generateDivisionQuestion(int maxNumber) {
+    final safeMax = max(maxNumber, 2);
 
-  int _generateDivisor(int firstNumber, int stageIndex) {
-    final divisors = <int>[];
-    for (int i = 1; i < stages[stageIndex]; i++) {
-      if (firstNumber % i == 0) {
-        divisors.add(i);
+    while (true) {
+      final secondNumber = _random.nextInt(safeMax - 1) + 1;
+      final maxQuotient = (safeMax - 1) ~/ secondNumber;
+      if (maxQuotient < 1) {
+        continue;
       }
+
+      final correctAnswer = _random.nextInt(maxQuotient) + 1;
+      final firstNumber = secondNumber * correctAnswer;
+      return _DivisionQuestion(
+        firstNumber: firstNumber,
+        secondNumber: secondNumber,
+        correctAnswer: correctAnswer,
+      );
     }
-    return divisors[Random().nextInt(divisors.length)];
   }
 }

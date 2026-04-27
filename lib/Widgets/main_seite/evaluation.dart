@@ -1,62 +1,58 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../bloc/app_bloc.dart';
+import '../../providers/game_notifier.dart';
 
-class Bewertung extends StatelessWidget {
+class Bewertung extends ConsumerWidget {
   const Bewertung({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AppBloc, AppState>(
-      builder: (context, state) {
-        return Container(
-            child: state.answer != null && state.valuation[0] == 'R'
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(gameNotifierProvider);
+    return Container(
+        child: state.answer != null && state.valuation[0] == 'R'
+            ? Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(state.valuation,
+                    style: const TextStyle(
+                        color: Colors.amber,
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold)),
+              )
+            : state.answer != null && state.valuation[0] == 'F'
                 ? Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(state.valuation,
                         style: const TextStyle(
-                            color: Colors.amber,
+                            color: Colors.red,
                             fontSize: 40,
                             fontWeight: FontWeight.bold)),
                   )
-                : state.answer != null && state.valuation[0] == 'F'
+                : state.answer != null && state.valuation == 'Bestanden'
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(state.valuation,
                             style: const TextStyle(
-                                color: Colors.red,
+                                color: Colors.amber,
                                 fontSize: 40,
                                 fontWeight: FontWeight.bold)),
                       )
-                    : state.answer != null && state.valuation == 'Bestanden'
+                    : state.answer != null && state.valuation == 'durchgefallen'
                         ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(state.valuation,
+                                style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold)),
+                          )
+                        : Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(state.valuation,
                                 style: const TextStyle(
                                     color: Colors.amber,
                                     fontSize: 40,
                                     fontWeight: FontWeight.bold)),
-                          )
-                        : state.answer != null &&
-                                state.valuation == 'durchgefallen'
-                            ? Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(state.valuation,
-                                    style: const TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 40,
-                                        fontWeight: FontWeight.bold)),
-                              )
-                            : Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(state.valuation,
-                                    style: const TextStyle(
-                                        color: Colors.amber,
-                                        fontSize: 40,
-                                        fontWeight: FontWeight.bold)),
-                              ));
-      },
-    );
+                          ));
   }
 }
