@@ -12,10 +12,7 @@ class AnswerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AppBloc, AppState>(
-      listener: (context, state) {
-        // TODO: implement listener
-      },
+    return BlocBuilder<AppBloc, AppState>(
       builder: (context, state) {
         double width = MediaQuery.of(context).size.width;
 
@@ -36,8 +33,8 @@ class AnswerSheet extends StatelessWidget {
                   ),
                 ),
                 onTap: () {
-                  if (!state.valuation.contains('failed') &&
-                      !state.valuation.contains('wins')) {
+                  if (state.status != GameStatus.failed &&
+                      state.status != GameStatus.won) {
                     BlocProvider.of<AppBloc>(context)
                         .add(TestingEvent(answer: answer));
                     BlocProvider.of<AppBloc>(context).add(NextTaskEvent());

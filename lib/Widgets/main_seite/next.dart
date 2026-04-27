@@ -8,8 +8,7 @@ class Naechst extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AppBloc, AppState>(
-      listener: (context, state) {},
+    return BlocBuilder<AppBloc, AppState>(
       builder: (context, state) {
         return Padding(
           padding: const EdgeInsets.all(8.0),
@@ -21,8 +20,8 @@ class Naechst extends StatelessWidget {
                 child: ElevatedButton(
                     style: ButtonStyle(
                         backgroundColor: state.isAnswerGived
-                            ? const MaterialStatePropertyAll(Colors.red)
-                            : const MaterialStatePropertyAll(
+                            ? const WidgetStatePropertyAll(Colors.red)
+                            : const WidgetStatePropertyAll(
                                 Color.fromARGB(0, 158, 158, 158))),
                     onPressed: () {
                       state.trueAnswers < 8 && state.allAnswers < 10 ||

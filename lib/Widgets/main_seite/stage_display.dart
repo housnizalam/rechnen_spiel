@@ -8,8 +8,7 @@ class StageDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AppBloc, AppState>(
-      listener: (context, state) {},
+    return BlocBuilder<AppBloc, AppState>(
       builder: (context, state) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -89,7 +88,7 @@ class StageDisplay extends StatelessWidget {
                             state.actualStageSectioning <
                                 state.player!.maxStageSection
                     ? Colors.amber
-                    : Color.fromARGB(0, 158, 158, 158),
+                    : const Color.fromARGB(0, 158, 158, 158),
               ),
               onTap: () {
                 if (state.calcOperation!.operation == '+' &&

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rechnen_spiel/bloc/help_functions.dart';
 
 import '../../bloc/app_bloc.dart';
 
@@ -9,8 +8,7 @@ class ApBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AppBloc, AppState>(
-      listener: (context, state) {},
+    return BlocBuilder<AppBloc, AppState>(
       builder: (context, state) {
         return AppBar(
           title: Text(state.title,
@@ -33,8 +31,6 @@ class ApBar extends StatelessWidget {
                 color: Colors.black,
               ),
               onPressed: () {
-                print(numberToOperation('+', 20, state));
-                print('hallo');
                 BlocProvider.of<AppBloc>(context).add(ChooseOperationEvent());
               },
             ))

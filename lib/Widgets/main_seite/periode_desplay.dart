@@ -8,8 +8,7 @@ class RechnungsDauer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AppBloc, AppState>(
-      listener: (context, state) {},
+    return BlocBuilder<AppBloc, AppState>(
       builder: (context, state) {
         return Padding(
           padding: const EdgeInsets.all(8.0),

@@ -1,16 +1,16 @@
-import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../domain/game_engine.dart';
 
 import 'bloc_classes.dart';
 import 'global_variablen.dart';
-import 'help_functions.dart';
 
 part 'app_event.dart';
 part 'app_state.dart';
 
 class AppBloc extends Bloc<AppEvent, AppState> {
+  final GameEngine _gameEngine = GameEngine();
+
   AppBloc() : super(const AppState()) {
     on<ChooseOperationEvent>(chooseOperation);
     on<GiveNameEvent>(giveName);
@@ -42,11 +42,13 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       isAskGived: () => false,
       isAnswerGived: () => true,
       valuation: () => '',
+      status: () => GameStatus.idle,
       firstNumber: () => null,
       secondNumber: () => null,
+      correctAnswer: () => 0,
+      answerOptions: () => const [],
       period: () => 0,
     );
-    print(numberToOperation('*', 12, state));
 
     emit(newState);
   }
@@ -57,6 +59,7 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     final newState = state.copyWith(
       player: () => player,
       calcOperation: () => calcOperation,
+      status: () => GameStatus.idle,
     );
     emit(newState);
   }
@@ -85,9 +88,12 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       trueAnswers: () => 0,
       firstNumber: () => null,
       secondNumber: () => null,
+      correctAnswer: () => 0,
+      answerOptions: () => const [],
       period: () => 0,
       startTime: () => DateTime.now(),
       valuation: () => '',
+      status: () => GameStatus.idle,
     );
     emit(newState);
   }
@@ -100,8 +106,11 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         valuation: () => '${state.trueAnswers} / ${state.allAnswers}',
         firstNumber: () => null,
         secondNumber: () => null,
+        correctAnswer: () => 0,
+        answerOptions: () => const [],
         answer: () => null,
         isAnswerGived: () => false,
+        status: () => GameStatus.playing,
       );
       emit(newState);
     }
@@ -130,50 +139,42 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       trueAnswers: () => 0,
       firstNumber: () => null,
       secondNumber: () => null,
+      correctAnswer: () => 0,
+      answerOptions: () => const [],
       period: () => 0,
       isAskGived: () => false,
       startTime: () => DateTime.now(),
       valuation: () => '',
+      status: () => GameStatus.idle,
     );
     emit(newState);
   }
 
   repeatStage(RepeatStageEvent event, emit) {
-    int firstNumber = 0;
-    int secondNumber = 0;
-
-    if (state.calcOperation!.operation == '/') {
-      firstNumber = gibUnBrimeNummer(state);
-      secondNumber =
-          gibPassendeTeilNummer(firstNumber, state.actualStageSectioning);
-    } else if (state.calcOperation!.operation == '-') {
-      firstNumber = Random().nextInt(stages[state.actualStageSubtruction]);
-      secondNumber = Random().nextInt(stages[state.actualStageSubtruction]);
-    } else if (state.calcOperation!.operation == '*') {
-      firstNumber = Random().nextInt(stages[state.actualStageMultiplication]);
-      secondNumber = Random().nextInt(stages[state.actualStageMultiplication]);
-    } else {
-      firstNumber = Random().nextInt(stages[state.actualStageAdition]);
-      secondNumber = Random().nextInt(stages[state.actualStageAdition]);
-    }
+    final generatedQuestion = _gameEngine.generateQuestion(
+      operation: state.calcOperation!.operation,
+      stageIndex: _activeStageIndex(),
+      calcOperation: state.calcOperation!,
+    );
     final newState = state.copyWith(
       allAnswers: () => 0,
       trueAnswers: () => 0,
       valuation: () => '',
       period: () => 0,
       isAskGived: () => true,
-      firstNumber: () => firstNumber,
-      secondNumber: () => secondNumber,
+      firstNumber: () => generatedQuestion.firstNumber,
+      secondNumber: () => generatedQuestion.secondNumber,
+      correctAnswer: () => generatedQuestion.correctAnswer,
+      answerOptions: () => generatedQuestion.answerOptions,
       answer: () => null,
       isAnswerGived: () => false,
       startTime: () => DateTime.now(),
+      status: () => GameStatus.playing,
     );
     emit(newState);
   }
 
   startGameEvent(StartGameEvent event, emit) {
-    int? firstNumber;
-    int? secondNumber;
     DateTime startTime;
     if (state.startTime == null) {
       startTime = DateTime.now();
@@ -181,26 +182,19 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       startTime = state.startTime!;
     }
     if (!state.isAskGived) {
-      if (state.calcOperation!.operation == '/') {
-        firstNumber = gibUnBrimeNummer(state);
-        secondNumber =
-            gibPassendeTeilNummer(firstNumber, state.actualStageSectioning);
-      } else if (state.calcOperation!.operation == '-') {
-        firstNumber = Random().nextInt(stages[state.actualStageSubtruction]);
-        secondNumber = Random().nextInt(stages[state.actualStageSubtruction]);
-      } else if (state.calcOperation!.operation == '*') {
-        firstNumber = Random().nextInt(stages[state.actualStageMultiplication]);
-        secondNumber =
-            Random().nextInt(stages[state.actualStageMultiplication]);
-      } else {
-        firstNumber = Random().nextInt(stages[state.actualStageAdition]);
-        secondNumber = Random().nextInt(stages[state.actualStageAdition]);
-      }
+      final generatedQuestion = _gameEngine.generateQuestion(
+        operation: state.calcOperation!.operation,
+        stageIndex: _activeStageIndex(),
+        calcOperation: state.calcOperation!,
+      );
       final newState = state.copyWith(
-        firstNumber: () => firstNumber,
-        secondNumber: () => secondNumber,
+        firstNumber: () => generatedQuestion.firstNumber,
+        secondNumber: () => generatedQuestion.secondNumber,
+        correctAnswer: () => generatedQuestion.correctAnswer,
+        answerOptions: () => generatedQuestion.answerOptions,
         isAskGived: () => true,
         startTime: () => startTime,
+        status: () => GameStatus.playing,
       );
 
       emit(newState);
@@ -211,13 +205,8 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     int trueAnswers = state.trueAnswers;
     int allAnswers = state.allAnswers;
     String valuation = '';
-    int actualStageAdition = state._actualStageAdition;
-    int actualStageSubtraction = state._actualStageSubtruction;
-    int actualStageMultiblication = state._actualStageMultiplication;
-    int actualStageSectioning = state._actualStageSectioning;
-    Player player = Player();
     if (event.answer == null) {
-    } else if (answerValuation(state, event)) {
+    } else if (event.answer == state.correctAnswer) {
       trueAnswers++;
       allAnswers++;
       valuation = 'True Answer $trueAnswers / $allAnswers';
@@ -226,6 +215,11 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       valuation = 'false Answer $trueAnswers / $allAnswers';
     }
     if (trueAnswers > 7) {
+      final player = Player(name: state.player?.name)
+        ..maxStageAdition = state.player?.maxStageAdition ?? 0
+        ..maxStageSubtruction = state.player?.maxStageSubtruction ?? 0
+        ..maxStageMultiplication = state.player?.maxStageMultiplication ?? 0
+        ..maxStageSection = state.player?.maxStageSection ?? 0;
       if (state.calcOperation!.operation == '+') {
         player.maxStageAdition++;
       } else if (state.calcOperation!.operation == '-') {
@@ -235,7 +229,6 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       } else if (state.calcOperation!.operation == '/') {
         player.maxStageSection++;
       }
-      int stage = state.stage;
       valuation = '${state.player!.name} wins';
       final period = DateTime.now().difference(state.startTime!).inSeconds;
       final newState = state.copyWith(
@@ -243,28 +236,29 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         allAnswers: () => allAnswers,
         trueAnswers: () => trueAnswers,
         valuation: () => valuation,
-        stage: () => stage++,
+        status: () => GameStatus.won,
+        stage: () => state.stage + 1,
         period: () => period,
         player: () => player,
       );
       emit(newState);
-    }
-    if (allAnswers - trueAnswers < 3) {
-      final newState = state.copyWith(
-        isAskGived: () => false,
-        allAnswers: () => allAnswers,
-        trueAnswers: () => trueAnswers,
-        valuation: () => valuation,
-      );
-      emit(newState);
-    }
-    if (allAnswers - trueAnswers > 2) {
+    } else if (allAnswers - trueAnswers > 2) {
       valuation = '${state.player!.name} failed';
       final newState = state.copyWith(
         isAskGived: () => false,
         allAnswers: () => allAnswers,
         trueAnswers: () => trueAnswers,
         valuation: () => valuation,
+        status: () => GameStatus.failed,
+      );
+      emit(newState);
+    } else {
+      final newState = state.copyWith(
+        isAskGived: () => false,
+        allAnswers: () => allAnswers,
+        trueAnswers: () => trueAnswers,
+        valuation: () => valuation,
+        status: () => GameStatus.playing,
       );
       emit(newState);
     }
@@ -313,26 +307,22 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       int stageSubtruction = state.actualStageSubtruction;
       int stageMultiplication = state._actualStageMultiplication;
       int stageSectioning = state.actualStageSectioning;
-      if (state.actualStageAdition + 1 < stages.length) {
-        if (state.calcOperation!.operation == '+') {
-          // addiernStufen[stageAddieren].add(dauer);
-          stageAdition++;
-          player.maxStageAdition++;
-        } else if (state.calcOperation!.operation == '-') {
-          // subtrahiernStufen[stageSubtrahieren].add(dauer);
-
-          stageSubtruction++;
-          player.maxStageSubtruction++;
-        } else if (state.calcOperation!.operation == '*') {
-          // malenStufen[stageMalen].add(dauer);
-          stageMultiplication++;
-          player.maxStageMultiplication++;
-        } else if (state.calcOperation!.operation == '/') {
-          // teilenStufen[stageTeilen].add(dauer);
-
-          stageSectioning++;
-          player.maxStageSection++;
-        }
+      if (state.calcOperation!.operation == '+' &&
+          state.actualStageAdition + 1 < stages.length) {
+        stageAdition++;
+        player.maxStageAdition++;
+      } else if (state.calcOperation!.operation == '-' &&
+          state.actualStageSubtruction + 1 < stages.length) {
+        stageSubtruction++;
+        player.maxStageSubtruction++;
+      } else if (state.calcOperation!.operation == '*' &&
+          state.actualStageMultiplication + 1 < stages.length) {
+        stageMultiplication++;
+        player.maxStageMultiplication++;
+      } else if (state.calcOperation!.operation == '/' &&
+          state.actualStageSectioning + 1 < stages.length) {
+        stageSectioning++;
+        player.maxStageSection++;
       }
       final newState = state.copyWith(
         player: () => player,
@@ -346,8 +336,24 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         period: () => 0,
         isAnswerGived: () => false,
         valuation: () => '',
+        correctAnswer: () => 0,
+        answerOptions: () => const [],
+        status: () => GameStatus.idle,
       );
       emit(newState);
     }
+  }
+
+  int _activeStageIndex() {
+    if (state.calcOperation!.operation == '+') {
+      return state.actualStageAdition;
+    }
+    if (state.calcOperation!.operation == '-') {
+      return state.actualStageSubtruction;
+    }
+    if (state.calcOperation!.operation == '*') {
+      return state.actualStageMultiplication;
+    }
+    return state.actualStageSectioning;
   }
 }

@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'app_bloc.dart';
 
+enum GameStatus { idle, playing, won, failed }
+
 @immutable
 class AppState {
   final int _stage;
@@ -25,7 +27,10 @@ class AppState {
   final int _actualStageSectioning;
   final int? _firstNumber;
   final int? _secondNumber;
+  final int _correctAnswer;
+  final List<int> _answerOptions;
   final String _valuation;
+  final GameStatus _status;
   final int _trueAnswers;
   final int _allAnswers;
   final Player? _player;
@@ -34,10 +39,10 @@ class AppState {
     String title = '',
     DateTime? startTime,
     int period = 0,
-    String? answer ,
+    String? answer,
     bool isAskGived = false,
     bool isAnswerGived = false,
-    CalcOperation? calcOperation ,
+    CalcOperation? calcOperation,
     int operationenIndex = 0,
     int maxStageAdition = 0,
     int maxStageSubtraction = 0,
@@ -49,7 +54,10 @@ class AppState {
     int actualStageSectioning = 0,
     int? firstNumber,
     int? secondNumber,
-    String valuation='',
+    int correctAnswer = 0,
+    List<int> answerOptions = const [],
+    String valuation = '',
+    GameStatus status = GameStatus.idle,
     int trueAnswers = 0,
     int allAnswers = 0,
     Player? player,
@@ -72,7 +80,10 @@ class AppState {
         _actualStageSectioning = actualStageSectioning,
         _firstNumber = firstNumber,
         _secondNumber = secondNumber,
+        _correctAnswer = correctAnswer,
+        _answerOptions = answerOptions,
         _valuation = valuation,
+        _status = status,
         _trueAnswers = trueAnswers,
         _allAnswers = allAnswers,
         _player = player;
@@ -96,7 +107,10 @@ class AppState {
   int get actualStageSectioning => _actualStageSectioning;
   int? get firstNumber => _firstNumber;
   int? get secondNumber => _secondNumber;
+  int get correctAnswer => _correctAnswer;
+  List<int> get answerOptions => _answerOptions;
   String get valuation => _valuation;
+  GameStatus get status => _status;
   int get trueAnswers => _trueAnswers;
   int get allAnswers => _allAnswers;
   Player? get player => _player;
@@ -121,7 +135,10 @@ class AppState {
     int Function()? actualStageSectioning,
     int? Function()? firstNumber,
     int? Function()? secondNumber,
+    int Function()? correctAnswer,
+    List<int> Function()? answerOptions,
     String Function()? valuation,
+    GameStatus Function()? status,
     int Function()? trueAnswers,
     int Function()? allAnswers,
     Player? Function()? player,
@@ -134,19 +151,37 @@ class AppState {
       answer: answer == null ? _answer : answer(),
       isAskGived: isAskGived == null ? _isAskGived : isAskGived(),
       calcOperation: calcOperation == null ? _calcOperation : calcOperation(),
-      operationenIndex: operationsIndex == null ? _operationenIndex : operationsIndex(),
-      maxStageAdition: maxStageAdition == null ? _maxStageAdition : maxStageAdition(),
-      maxStageSubtraction: maxStageSubtraction == null ? _maxStageSubtraction : maxStageSubtraction(),
-      maxStageMultiplication: maxStageMultiplication == null ? _maxStageMultiplication : maxStageMultiplication(),
-      maxStageSectioning: maxStageSectioning == null ? _maxStageSectioning : maxStageSectioning(),
-      actualStageAdition: actualStageAdition == null ? _actualStageAdition : actualStageAdition(),
-      actualStageSubtruction: actualStageSubtruction == null ? _actualStageSubtruction : actualStageSubtruction(),
-      actualStageMultiplication:
-          actualStageMultiplication == null ? _actualStageMultiplication : actualStageMultiplication(),
-      actualStageSectioning: actualStageSectioning == null ? _actualStageSectioning : actualStageSectioning(),
+      operationenIndex:
+          operationsIndex == null ? _operationenIndex : operationsIndex(),
+      maxStageAdition:
+          maxStageAdition == null ? _maxStageAdition : maxStageAdition(),
+      maxStageSubtraction: maxStageSubtraction == null
+          ? _maxStageSubtraction
+          : maxStageSubtraction(),
+      maxStageMultiplication: maxStageMultiplication == null
+          ? _maxStageMultiplication
+          : maxStageMultiplication(),
+      maxStageSectioning: maxStageSectioning == null
+          ? _maxStageSectioning
+          : maxStageSectioning(),
+      actualStageAdition: actualStageAdition == null
+          ? _actualStageAdition
+          : actualStageAdition(),
+      actualStageSubtruction: actualStageSubtruction == null
+          ? _actualStageSubtruction
+          : actualStageSubtruction(),
+      actualStageMultiplication: actualStageMultiplication == null
+          ? _actualStageMultiplication
+          : actualStageMultiplication(),
+      actualStageSectioning: actualStageSectioning == null
+          ? _actualStageSectioning
+          : actualStageSectioning(),
       firstNumber: firstNumber == null ? _firstNumber : firstNumber(),
       secondNumber: secondNumber == null ? _secondNumber : secondNumber(),
+      correctAnswer: correctAnswer == null ? _correctAnswer : correctAnswer(),
+      answerOptions: answerOptions == null ? _answerOptions : answerOptions(),
       valuation: valuation == null ? _valuation : valuation(),
+      status: status == null ? _status : status(),
       trueAnswers: trueAnswers == null ? _trueAnswers : trueAnswers(),
       allAnswers: allAnswers == null ? _allAnswers : allAnswers(),
       player: player == null ? _player : player(),

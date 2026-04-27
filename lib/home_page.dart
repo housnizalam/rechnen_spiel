@@ -17,108 +17,102 @@ class MyHomePage extends StatelessWidget {
   Widget build(
     BuildContext context,
   ) {
-    return BlocProvider<AppBloc>(
-      create: (BuildContext context) => AppBloc(),
-      child: BlocConsumer<AppBloc, AppState>(
-        builder: (context, state) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(state.title,
-                  style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold)),
-              actions: [
-                Center(
-                  child: state.calcOperation == null
-                      ? const SizedBox()
-                      : Text(state.calcOperation!.operation,
-                          style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold)),
-                ),
-                Center(
-                    child: IconButton(
-                  icon: const Icon(
-                    Icons.change_circle_sharp,
+    return BlocBuilder<AppBloc, AppState>(
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(state.title,
+                style: const TextStyle(
                     color: Colors.black,
-                  ),
-                  onPressed: () {
-                    BlocProvider.of<AppBloc>(context)
-                        .add(ChooseOperationEvent());
-                  },
-                ))
-              ],
-            ),
-            body: Container(
-              // color: Color.fromARGB(255, 255, 0, 255),
-              height: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    Colors.red,
-                    Color.fromARGB(255, 105, 5, 5),
-                    Colors.black,
-                    Colors.black,
-                    Colors.black,
-                    Colors.black,
-                    Colors.black,
-                    Colors.black,
-                    Colors.black,
-                    Color.fromARGB(255, 105, 5, 5),
-                    Color.fromARGB(255, 105, 5, 5),
-                    Colors.red,
-                    Colors.red,
-                  ],
-                ),
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold)),
+            actions: [
+              Center(
+                child: state.calcOperation == null
+                    ? const SizedBox()
+                    : Text(state.calcOperation!.operation,
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold)),
               ),
-              child: state.player == null
-                  ? const NameGeber()
-                  : Container(
-                      height: double.infinity,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [
-                            Colors.red,
-                            Color.fromARGB(255, 105, 5, 5),
-                            Colors.black,
-                            Colors.black,
-                            Colors.black,
-                            Colors.black,
-                            Colors.black,
-                            Colors.black,
-                            Colors.black,
-                            Color.fromARGB(255, 105, 5, 5),
-                            Color.fromARGB(255, 105, 5, 5),
-                            Colors.red,
-                            Colors.red,
-                          ],
-                        ),
-                      ),
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          GibBerechnung(),
-                          AufgabeDarstellung(),
-                          AntwortEingabe(),
-                          Bewertung(),
-                          // Naechst(),
-                          RechnungsDauer(),
-                          StageDisplay()
+              Center(
+                  child: IconButton(
+                icon: const Icon(
+                  Icons.change_circle_sharp,
+                  color: Colors.black,
+                ),
+                onPressed: () {
+                  BlocProvider.of<AppBloc>(context).add(ChooseOperationEvent());
+                },
+              ))
+            ],
+          ),
+          body: Container(
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  Colors.red,
+                  Color.fromARGB(255, 105, 5, 5),
+                  Colors.black,
+                  Colors.black,
+                  Colors.black,
+                  Colors.black,
+                  Colors.black,
+                  Colors.black,
+                  Colors.black,
+                  Color.fromARGB(255, 105, 5, 5),
+                  Color.fromARGB(255, 105, 5, 5),
+                  Colors.red,
+                  Colors.red,
+                ],
+              ),
+            ),
+            child: state.player == null
+                ? const NameGeber()
+                : Container(
+                    height: double.infinity,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                        colors: [
+                          Colors.red,
+                          Color.fromARGB(255, 105, 5, 5),
+                          Colors.black,
+                          Colors.black,
+                          Colors.black,
+                          Colors.black,
+                          Colors.black,
+                          Colors.black,
+                          Colors.black,
+                          Color.fromARGB(255, 105, 5, 5),
+                          Color.fromARGB(255, 105, 5, 5),
+                          Colors.red,
+                          Colors.red,
                         ],
                       ),
                     ),
-            ),
-          );
-        },
-        listener: (context, state) {},
-      ),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        GibBerechnung(),
+                        AufgabeDarstellung(),
+                        AntwortEingabe(),
+                        Bewertung(),
+                        // Naechst(),
+                        RechnungsDauer(),
+                        StageDisplay()
+                      ],
+                    ),
+                  ),
+          ),
+        );
+      },
     );
   }
 }
