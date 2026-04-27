@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/game/presentation/pages/home_page.dart';
+import '../features/user/presentation/pages/start_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
-      home: const MyHomePage(),
+      home: const StartPage(),
     );
   }
 }

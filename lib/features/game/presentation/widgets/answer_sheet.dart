@@ -12,39 +12,53 @@ class AnswerSheet extends ConsumerWidget {
   const AnswerSheet({
     super.key,
     required this.answer,
+    this.compact = false,
   });
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameNotifierProvider);
     final gameNotifier = ref.read(gameNotifierProvider.notifier);
-    double width = MediaQuery.of(context).size.width;
 
     return state.firstNumber != null && state.secondNumber != null
-        ? InkWell(
-            child: SizedBox(
-              width: width * 0.5,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Center(
-                      child: Text(
+        ? Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                if (state.status != GameStatus.failed &&
+                    state.status != GameStatus.won) {
+                  gameNotifier.submitAnswerAndContinue(answer);
+                }
+              },
+              borderRadius: BorderRadius.circular(24),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.black,
+                      Color.fromARGB(255, 78, 0, 0),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.red, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
                     answer.toString(),
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  )),
+                    style: TextStyle(
+                      fontSize: compact ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber,
+                    ),
+                  ),
                 ),
               ),
             ),
-            onTap: () {
-              if (state.status != GameStatus.failed &&
-                  state.status != GameStatus.won) {
-                gameNotifier.submitAnswer(answer);
-                gameNotifier.nextQuestion();
-                gameNotifier.startGame();
-              }
-            },
           )
-        : Container();
+        : const SizedBox.shrink();
   }
 }

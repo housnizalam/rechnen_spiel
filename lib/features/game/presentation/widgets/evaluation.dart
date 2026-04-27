@@ -5,55 +5,74 @@ import '../../state/game_notifier.dart';
 
 /// Displays feedback text for answer correctness and end-of-stage outcomes.
 class Evaluation extends ConsumerWidget {
-  const Evaluation({Key? key}) : super(key: key);
+  const Evaluation({Key? key, this.compact = false}) : super(key: key);
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameNotifierProvider);
-    return Container(
-        child: state.answer != null && state.evaluationMessage[0] == 'R'
-            ? Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(state.evaluationMessage,
-                    style: const TextStyle(
-                        color: Colors.amber,
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold)),
-              )
-            : state.answer != null && state.evaluationMessage[0] == 'F'
-                ? Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(state.evaluationMessage,
-                        style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold)),
-                  )
-                : state.answer != null && state.evaluationMessage == 'Bestanden'
-                    ? Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(state.evaluationMessage,
-                            style: const TextStyle(
-                                color: Colors.amber,
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold)),
-                      )
-                    : state.answer != null && state.evaluationMessage == 'durchgefallen'
-                        ? Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(state.evaluationMessage,
-                                style: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold)),
-                          )
-                        : Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(state.evaluationMessage,
-                                style: const TextStyle(
-                                    color: Colors.amber,
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold)),
-                          ));
+    if (state.evaluationMessage.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final startsWithF =
+        state.evaluationMessage.isNotEmpty && state.evaluationMessage[0] == 'F';
+    final isFailed = state.evaluationMessage == 'durchgefallen';
+    final isError = startsWithF || isFailed;
+    final maxWidth =
+        MediaQuery.of(context).size.width * (compact ? 0.92 : 0.86);
+
+    final messageLength = state.evaluationMessage.length;
+    final double textSize;
+    if (compact || messageLength > 110) {
+      textSize = 16;
+    } else if (messageLength > 75) {
+      textSize = 18;
+    } else {
+      textSize = 21;
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: maxWidth,
+            minHeight: compact ? 80 : 96,
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 12 : 16,
+              vertical: compact ? 10 : 12,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.48),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isError ? Colors.red : Colors.amber,
+                width: 1.1,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                state.evaluationMessage,
+                textAlign: TextAlign.center,
+                softWrap: true,
+                maxLines: compact ? 2 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isError ? Colors.red : Colors.amber,
+                  fontSize: textSize,
+                  fontWeight: FontWeight.bold,
+                  height: 1.18,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

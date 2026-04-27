@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
@@ -75,7 +76,7 @@ class GameState {
   /// Stage completion duration in seconds.
   ///
   /// Set when the player wins, reset on stage transitions/restarts.
-  final int period;
+  final double period;
 
   /// Current stage lifecycle status.
   final GameStatus status;
@@ -103,7 +104,7 @@ class GameState {
     this.evaluationMessage = '',
     this.trueAnswers = 0,
     this.allAnswers = 0,
-    this.period = 0,
+    this.period = 0.0,
     this.status = GameStatus.idle,
     this.player,
   });
@@ -128,7 +129,7 @@ class GameState {
     String Function()? evaluationMessage,
     int Function()? trueAnswers,
     int Function()? allAnswers,
-    int Function()? period,
+    double Function()? period,
     GameStatus Function()? status,
     Player? Function()? player,
   }) {
@@ -199,11 +200,25 @@ class GameNotifier extends StateNotifier<GameState> {
 
   GameNotifier(this.gameEngine) : super(const GameState());
 
+  void _debugGenerationLog(String source, int stageIndex) {
+    if (kDebugMode) {
+      debugPrint(
+        '[GameNotifier] generateQuestion source=$source operation=${state.calcOperation?.operation} stageIndex=$stageIndex status=${state.status}',
+      );
+    }
+  }
+
   /// Cycles to the next arithmetic operation and resets round-local state.
   ///
   /// Call this from operation-switch UI actions. It keeps per-operation stage
   /// indices, but clears the current question, counters, and feedback.
   void chooseOperation() {
+    if (state.status == GameStatus.playing) {
+      if (kDebugMode) {
+        debugPrint('[GameNotifier] chooseOperation ignored while playing');
+      }
+      return;
+    }
     int operationIndex = state.operationIndex;
     if (operationIndex == 3) {
       operationIndex = 0;
@@ -225,7 +240,8 @@ class GameNotifier extends StateNotifier<GameState> {
       secondNumber: () => null,
       correctAnswer: () => 0,
       answerOptions: () => const [],
-      period: () => 0,
+      startTime: () => null,
+      period: () => 0.0,
     );
   }
 
@@ -244,6 +260,9 @@ class GameNotifier extends StateNotifier<GameState> {
   /// This updates only the active operation stage index and resets the current
   /// stage attempt counters/question state.
   void nextStage() {
+    if (state.status == GameStatus.playing) {
+      return;
+    }
     int actualStageAddition = state.actualStageAddition;
     int actualStageSubtraction = state.actualStageSubtraction;
     int actualStageMultiplication = state.actualStageMultiplication;
@@ -269,8 +288,8 @@ class GameNotifier extends StateNotifier<GameState> {
       secondNumber: () => null,
       correctAnswer: () => 0,
       answerOptions: () => const [],
-      period: () => 0,
-      startTime: () => DateTime.now(),
+      period: () => 0.0,
+      startTime: () => null,
       evaluationMessage: () => '',
       status: () => GameStatus.idle,
     );
@@ -284,16 +303,20 @@ class GameNotifier extends StateNotifier<GameState> {
     if (!state.isAnswerGiven) {
       return;
     }
+    if (state.status == GameStatus.won || state.status == GameStatus.failed) {
+      return;
+    }
     state = state.copyWith(
       isQuestionGiven: () => false,
-      evaluationMessage: () => '${state.trueAnswers} / ${state.allAnswers}',
+      evaluationMessage: () =>
+          'Progress: ${state.trueAnswers} of ${state.allAnswers}',
       firstNumber: () => null,
       secondNumber: () => null,
       correctAnswer: () => 0,
       answerOptions: () => const [],
       answer: () => null,
       isAnswerGiven: () => false,
-      status: () => GameStatus.idle,
+      status: () => GameStatus.playing,
     );
   }
 
@@ -302,6 +325,9 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Intended for stage navigation controls. It resets question/counter state
   /// for a fresh attempt at the selected earlier stage.
   void previousStage() {
+    if (state.status == GameStatus.playing) {
+      return;
+    }
     int actualStageAddition = state.actualStageAddition;
     int actualStageSubtraction = state.actualStageSubtraction;
     int actualStageMultiplication = state.actualStageMultiplication;
@@ -326,25 +352,27 @@ class GameNotifier extends StateNotifier<GameState> {
       secondNumber: () => null,
       correctAnswer: () => 0,
       answerOptions: () => const [],
-      period: () => 0,
+      period: () => 0.0,
       isQuestionGiven: () => false,
-      startTime: () => DateTime.now(),
+      startTime: () => null,
       evaluationMessage: () => '',
       status: () => GameStatus.idle,
     );
   }
 
   void repeatStage() {
+    final stageIndex = _activeStageIndex();
+    _debugGenerationLog('repeatStage', stageIndex);
     final generatedQuestion = gameEngine.generateQuestion(
       operation: state.calcOperation!.operation,
-      stageIndex: _activeStageIndex(),
+      stageIndex: stageIndex,
       calcOperation: state.calcOperation!,
     );
     state = state.copyWith(
       allAnswers: () => 0,
       trueAnswers: () => 0,
       evaluationMessage: () => '',
-      period: () => 0,
+      period: () => 0.0,
       isQuestionGiven: () => true,
       firstNumber: () => generatedQuestion.firstNumber,
       secondNumber: () => generatedQuestion.secondNumber,
@@ -357,22 +385,42 @@ class GameNotifier extends StateNotifier<GameState> {
     );
   }
 
+  /// Stops the current stage attempt without counting as win or fail.
+  ///
+  /// Clears active question/answers and returns the UI to idle so the player
+  /// can start again manually.
+  void stopGame() {
+    state = state.copyWith(
+      isQuestionGiven: () => false,
+      isAnswerGiven: () => false,
+      firstNumber: () => null,
+      secondNumber: () => null,
+      correctAnswer: () => 0,
+      answerOptions: () => const [],
+      answer: () => null,
+      evaluationMessage: () => '',
+      startTime: () => null,
+      period: () => 0.0,
+      status: () => GameStatus.idle,
+    );
+  }
+
   /// Starts gameplay for the current stage by generating a question.
   ///
   /// Call this when entering a stage or after [nextQuestion]. The method keeps
   /// the same [startTime] during an ongoing stage attempt and sets status to
   /// [GameStatus.playing].
   void startGame() {
-    DateTime startTime;
-    if (state.startTime == null) {
-      startTime = DateTime.now();
-    } else {
-      startTime = state.startTime!;
+    if (state.status == GameStatus.won || state.status == GameStatus.failed) {
+      return;
     }
     if (!state.isQuestionGiven) {
+      final startTime = DateTime.now();
+      final stageIndex = _activeStageIndex();
+      _debugGenerationLog('startGame', stageIndex);
       final generatedQuestion = gameEngine.generateQuestion(
         operation: state.calcOperation!.operation,
-        stageIndex: _activeStageIndex(),
+        stageIndex: stageIndex,
         calcOperation: state.calcOperation!,
       );
       state = state.copyWith(
@@ -382,6 +430,10 @@ class GameNotifier extends StateNotifier<GameState> {
         answerOptions: () => generatedQuestion.answerOptions,
         isQuestionGiven: () => true,
         startTime: () => startTime,
+        period: () => 0.0,
+        isAnswerGiven: () => false,
+        answer: () => null,
+        evaluationMessage: () => '',
         status: () => GameStatus.playing,
       );
     }
@@ -406,12 +458,14 @@ class GameNotifier extends StateNotifier<GameState> {
     if (answer == state.correctAnswer) {
       trueAnswers++;
       allAnswers++;
-      evaluationMessage = 'True Answer $trueAnswers / $allAnswers';
+      evaluationMessage = 'Correct: $trueAnswers of $allAnswers';
     } else {
       allAnswers++;
-      evaluationMessage = 'false Answer $trueAnswers / $allAnswers';
+      evaluationMessage = 'Wrong: $trueAnswers of $allAnswers';
     }
     if (trueAnswers > 7) {
+      final completedStageNumber = _activeStageIndex() + 1;
+      final operationName = _operationName(state.calcOperation!.operation);
       final player = Player(name: state.player?.name)
         ..maxStageAdition = state.player?.maxStageAdition ?? 0
         ..maxStageSubtruction = state.player?.maxStageSubtruction ?? 0
@@ -426,8 +480,10 @@ class GameNotifier extends StateNotifier<GameState> {
       } else if (state.calcOperation!.operation == '/') {
         player.maxStageSection++;
       }
-      evaluationMessage = '${state.player!.name} wins';
-      final period = DateTime.now().difference(state.startTime!).inSeconds;
+      final period =
+          DateTime.now().difference(state.startTime!).inMilliseconds / 1000.0;
+      evaluationMessage =
+          '${state.player!.name} completed Stage $completedStageNumber in $operationName in ${period.toStringAsFixed(1)} Sec';
       state = state.copyWith(
         isQuestionGiven: () => false,
         isAnswerGiven: () => true,
@@ -437,6 +493,7 @@ class GameNotifier extends StateNotifier<GameState> {
         status: () => GameStatus.won,
         stage: () => state.stage + 1,
         period: () => period,
+        startTime: () => null,
         player: () => player,
       );
     } else if (allAnswers - trueAnswers > 2) {
@@ -447,6 +504,8 @@ class GameNotifier extends StateNotifier<GameState> {
         allAnswers: () => allAnswers,
         trueAnswers: () => trueAnswers,
         evaluationMessage: () => evaluationMessage,
+        period: () => 0.0,
+        startTime: () => null,
         status: () => GameStatus.failed,
       );
     } else {
@@ -461,8 +520,44 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 
+  /// Handles answer submission and advances to next question when still playing.
+  void submitAnswerAndContinue(int answer) {
+    submitAnswer(answer);
+    if (state.status == GameStatus.playing) {
+      nextQuestion();
+      _generateNextQuestionInRun();
+    }
+  }
+
+  void _generateNextQuestionInRun() {
+    if (state.status != GameStatus.playing || state.isQuestionGiven) {
+      return;
+    }
+    final stageIndex = _activeStageIndex();
+    _debugGenerationLog('nextQuestion', stageIndex);
+    final generatedQuestion = gameEngine.generateQuestion(
+      operation: state.calcOperation!.operation,
+      stageIndex: stageIndex,
+      calcOperation: state.calcOperation!,
+    );
+    state = state.copyWith(
+      firstNumber: () => generatedQuestion.firstNumber,
+      secondNumber: () => generatedQuestion.secondNumber,
+      correctAnswer: () => generatedQuestion.correctAnswer,
+      answerOptions: () => generatedQuestion.answerOptions,
+      isQuestionGiven: () => true,
+      isAnswerGiven: () => false,
+      answer: () => null,
+      status: () => GameStatus.playing,
+    );
+  }
+
   void winToNextStage() {
     if (state.trueAnswers > 7) {
+      state = state.copyWith(
+        startTime: () => null,
+        period: () => 0.0,
+      );
       final player = Player()
         ..name = state.player!.name
         ..maxStageAdition = state.player!.maxStageAdition
@@ -490,6 +585,23 @@ class GameNotifier extends StateNotifier<GameState> {
         stageSectioning++;
         player.maxStageSection++;
       }
+
+      final nextStageIndex = state.calcOperation!.operation == '+'
+          ? stageAdition
+          : state.calcOperation!.operation == '-'
+              ? stageSubtruction
+              : state.calcOperation!.operation == '*'
+                  ? stageMultiplication
+                  : stageSectioning;
+
+      final generatedQuestion = gameEngine.generateQuestion(
+        operation: state.calcOperation!.operation,
+        stageIndex: nextStageIndex,
+        calcOperation: state.calcOperation!,
+      );
+      _debugGenerationLog('winToNextStage', nextStageIndex);
+      final nextRunStart = DateTime.now();
+
       state = state.copyWith(
         player: () => player,
         actualStageAddition: () => stageAdition,
@@ -497,14 +609,17 @@ class GameNotifier extends StateNotifier<GameState> {
         actualStageMultiplication: () => stageMultiplication,
         actualStageDivision: () => stageSectioning,
         allAnswers: () => 0,
-        startTime: () => DateTime.now(),
+        startTime: () => nextRunStart,
         trueAnswers: () => 0,
-        period: () => 0,
+        period: () => 0.0,
         isAnswerGiven: () => false,
+        isQuestionGiven: () => true,
         evaluationMessage: () => '',
-        correctAnswer: () => 0,
-        answerOptions: () => const [],
-        status: () => GameStatus.idle,
+        firstNumber: () => generatedQuestion.firstNumber,
+        secondNumber: () => generatedQuestion.secondNumber,
+        correctAnswer: () => generatedQuestion.correctAnswer,
+        answerOptions: () => generatedQuestion.answerOptions,
+        status: () => GameStatus.playing,
       );
     }
   }
@@ -521,6 +636,13 @@ class GameNotifier extends StateNotifier<GameState> {
       return state.actualStageMultiplication.clamp(0, lastIndex);
     }
     return state.actualStageDivision.clamp(0, lastIndex);
+  }
+
+  String _operationName(String operation) {
+    if (operation == '+') return 'Addition';
+    if (operation == '-') return 'Subtraction';
+    if (operation == '*') return 'Multiplication';
+    return 'Division';
   }
 }
 

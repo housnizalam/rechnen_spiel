@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../features/user/data/user_storage_service.dart';
-import '../../../../features/user/domain/user_profile.dart';
-import '../../../../features/user/state/user_providers.dart';
-import '../../state/game_notifier.dart';
+import '../../../game/presentation/pages/game_page.dart';
+import '../../../game/state/game_notifier.dart';
+import '../../data/user_storage_service.dart';
+import '../../domain/user_profile.dart';
+import '../../state/user_providers.dart';
 
-/// Name entry screen shown before gameplay starts.
+/// Initial screen where players select an existing profile or create a new one.
 ///
-/// Shows a list of previously saved user names when available.
-/// Always offers a text field + Start button to enter a new name.
-class NameInput extends ConsumerStatefulWidget {
-  const NameInput({Key? key}) : super(key: key);
+/// After a player is chosen, [GameNotifier.giveName] is called and the app
+/// navigates to [GamePage] using [Navigator.pushReplacement] so the back
+/// button cannot return to this screen during a game session.
+class StartPage extends ConsumerStatefulWidget {
+  const StartPage({super.key});
 
   @override
-  ConsumerState<NameInput> createState() => _NameInputState();
+  ConsumerState<StartPage> createState() => _StartPageState();
 }
 
-class _NameInputState extends ConsumerState<NameInput> {
+class _StartPageState extends ConsumerState<StartPage> {
   final TextEditingController _nameController = TextEditingController();
   String? _errorText;
 
@@ -35,6 +37,13 @@ class _NameInputState extends ConsumerState<NameInput> {
 
   bool get _canStart => _nameController.text.trim().isNotEmpty;
 
+  void _enterGame(String name) {
+    ref.read(gameNotifierProvider.notifier).giveName(name);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const GamePage()),
+    );
+  }
+
   Future<void> _startWithNewName() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
@@ -45,15 +54,9 @@ class _NameInputState extends ConsumerState<NameInput> {
       await service.save(profile);
       ref.invalidate(savedUsersProvider);
     } on DuplicateNameException {
-      // Name already exists — still allow entering the game with it.
+      // Name already exists — enter the game with it anyway.
     }
-    if (mounted) {
-      ref.read(gameNotifierProvider.notifier).giveName(name);
-    }
-  }
-
-  void _startWithExistingUser(UserProfile user) {
-    ref.read(gameNotifierProvider.notifier).giveName(user.name);
+    if (mounted) _enterGame(name);
   }
 
   Future<void> _showDeleteDialog(UserProfile user) async {
@@ -114,9 +117,7 @@ class _NameInputState extends ConsumerState<NameInput> {
                         try {
                           await service.updateName(
                               user.id, controller.text.trim());
-                          if (mounted) {
-                            ref.invalidate(savedUsersProvider);
-                          }
+                          if (mounted) ref.invalidate(savedUsersProvider);
                           if (ctx.mounted) Navigator.of(ctx).pop();
                         } on DuplicateNameException catch (e) {
                           setDialogState(() => dialogError = e.message);
@@ -137,13 +138,42 @@ class _NameInputState extends ConsumerState<NameInput> {
   Widget build(BuildContext context) {
     final savedUsersAsync = ref.watch(savedUsersProvider);
 
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        child: savedUsersAsync.when(
-          loading: () => const CircularProgressIndicator(color: Colors.red),
-          error: (_, __) => _buildForm(savedUsers: const []),
-          data: (savedUsers) => _buildForm(savedUsers: savedUsers),
+    return Scaffold(
+      body: Container(
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [
+              Colors.red,
+              Color.fromARGB(255, 105, 5, 5),
+              Colors.black,
+              Colors.black,
+              Colors.black,
+              Colors.black,
+              Colors.black,
+              Colors.black,
+              Colors.black,
+              Color.fromARGB(255, 105, 5, 5),
+              Color.fromARGB(255, 105, 5, 5),
+              Colors.red,
+              Colors.red,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: savedUsersAsync.when(
+                loading: () =>
+                    const CircularProgressIndicator(color: Colors.red),
+                error: (_, __) => _buildForm(savedUsers: const []),
+                data: (savedUsers) => _buildForm(savedUsers: savedUsers),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -181,7 +211,7 @@ class _NameInputState extends ConsumerState<NameInput> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      onPressed: () => _startWithExistingUser(user),
+                      onPressed: () => _enterGame(user.name),
                       child: Text(user.name),
                     ),
                   ),

@@ -5,24 +5,31 @@ import '../../state/game_notifier.dart';
 
 /// Shows the active arithmetic expression while a round is in progress.
 class ExerciseDisplay extends ConsumerWidget {
-  const ExerciseDisplay({Key? key}) : super(key: key);
+  const ExerciseDisplay({Key? key, this.compact = false}) : super(key: key);
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameNotifierProvider);
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: state.status == GameStatus.failed ||
-              state.status == GameStatus.won ||
-              state.firstNumber == null
-          ? Container()
-          : Text(
-              '${state.firstNumber} ${state.calcOperation!.operation} ${state.secondNumber}',
-              style: const TextStyle(
-                  color: Colors.amber,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold),
-            ),
+    if (state.status == GameStatus.failed ||
+        state.status == GameStatus.won ||
+        state.firstNumber == null) {
+      return const SizedBox.shrink();
+    }
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        '${state.firstNumber} ${state.calcOperation!.operation} ${state.secondNumber}',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.amber,
+          fontSize: compact ? 54 : 76,
+          fontWeight: FontWeight.w900,
+          letterSpacing: compact ? 0.8 : 1.5,
+        ),
+      ),
     );
   }
 }
