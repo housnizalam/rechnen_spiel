@@ -37,12 +37,27 @@ class UserStorageService {
   /// Throws a [DuplicateNameException] when a profile with the same name
   /// already exists (case-insensitive comparison).
   Future<void> save(UserProfile profile) async {
+    await upsert(profile, validateDuplicateName: true);
+  }
+
+  /// Inserts or replaces [profile] using [UserProfile.id] as the key.
+  ///
+  /// When [validateDuplicateName] is true, a duplicate-name check is applied
+  /// against other user IDs (case-insensitive, trimmed).
+  Future<void> upsert(
+    UserProfile profile, {
+    bool validateDuplicateName = true,
+  }) async {
     final existing = loadAll();
-    final duplicate = existing.any(
-      (p) => p.name.trim().toLowerCase() == profile.name.trim().toLowerCase(),
-    );
-    if (duplicate) {
-      throw DuplicateNameException(profile.name);
+    if (validateDuplicateName) {
+      final duplicate = existing.any(
+        (p) =>
+            p.id != profile.id &&
+            p.name.trim().toLowerCase() == profile.name.trim().toLowerCase(),
+      );
+      if (duplicate) {
+        throw DuplicateNameException(profile.name);
+      }
     }
     await _box.put(profile.id, profile.toMap());
   }
@@ -52,6 +67,17 @@ class UserStorageService {
     final value = _box.get(id);
     if (value == null) return null;
     return UserProfile.fromMap(value as Map);
+  }
+
+  /// Finds a profile by [name] using case-insensitive, trimmed matching.
+  UserProfile? findByName(String name) {
+    final normalized = name.trim().toLowerCase();
+    for (final profile in loadAll()) {
+      if (profile.name.trim().toLowerCase() == normalized) {
+        return profile;
+      }
+    }
+    return null;
   }
 
   /// Updates the name of an existing profile identified by [id].
@@ -71,7 +97,7 @@ class UserStorageService {
     final current = findById(id);
     if (current == null) return;
     final updated = current.copyWith(name: trimmed);
-    await _box.put(id, updated.toMap());
+    await upsert(updated, validateDuplicateName: true);
   }
 
   /// Deletes the profile with [id] from the box.

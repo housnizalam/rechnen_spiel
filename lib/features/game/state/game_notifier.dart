@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/constants/game_constants.dart';
+import '../../user/data/user_storage_service.dart';
+import '../../user/domain/game_record.dart';
+import '../../user/domain/user_profile.dart';
+import '../../user/state/user_providers.dart';
 import '../domain/game_engine.dart';
 import '../domain/game_models.dart';
 
@@ -197,8 +201,10 @@ class GameState {
 class GameNotifier extends StateNotifier<GameState> {
   /// Question generator containing operation-specific math rules.
   final GameEngine gameEngine;
+  final UserStorageService userStorageService;
 
-  GameNotifier(this.gameEngine) : super(const GameState());
+  GameNotifier(this.gameEngine, this.userStorageService)
+      : super(const GameState());
 
   void _debugGenerationLog(String source, int stageIndex) {
     if (kDebugMode) {
@@ -245,13 +251,60 @@ class GameNotifier extends StateNotifier<GameState> {
     );
   }
 
-  void giveName(String name) {
-    final player = Player(name: name);
+  void giveName(
+    String name, {
+    String? userId,
+    DateTime? createdAt,
+    List<GameRecord>? gameRecords,
+  }) {
+    final records = List<GameRecord>.from(gameRecords ?? <GameRecord>[]);
+    final additionIndex = _nextPlayableStageIndexFromRecords(records, '+');
+    final subtractionIndex = _nextPlayableStageIndexFromRecords(records, '-');
+    final multiplicationIndex =
+        _nextPlayableStageIndexFromRecords(records, '*');
+    final divisionIndex = _nextPlayableStageIndexFromRecords(records, '/');
+
+    final player = Player(
+      id: userId,
+      name: name,
+      createdAt: createdAt,
+      gameRecords: records,
+    );
+    player.maxStageAdition = additionIndex;
+    player.maxStageSubtruction = subtractionIndex;
+    player.maxStageMultiplication = multiplicationIndex;
+    player.maxStageSection = divisionIndex;
+
     final calcOperation = CalcOperation('+');
     state = state.copyWith(
       player: () => player,
       calcOperation: () => calcOperation,
+      operationIndex: () => 0,
+      actualStageAddition: () => additionIndex,
+      actualStageSubtraction: () => subtractionIndex,
+      actualStageMultiplication: () => multiplicationIndex,
+      actualStageDivision: () => divisionIndex,
+      allAnswers: () => 0,
+      trueAnswers: () => 0,
+      firstNumber: () => null,
+      secondNumber: () => null,
+      correctAnswer: () => 0,
+      answerOptions: () => const [],
+      evaluationMessage: () => '',
+      isQuestionGiven: () => false,
+      isAnswerGiven: () => false,
+      startTime: () => null,
+      period: () => 0.0,
       status: () => GameStatus.idle,
+    );
+  }
+
+  void giveUserProfile(UserProfile profile) {
+    giveName(
+      profile.name,
+      userId: profile.id,
+      createdAt: profile.createdAt,
+      gameRecords: profile.gameRecords,
     );
   }
 
@@ -467,6 +520,9 @@ class GameNotifier extends StateNotifier<GameState> {
       final completedStageNumber = _activeStageIndex() + 1;
       final operationName = _operationName(state.calcOperation!.operation);
       final player = Player(name: state.player?.name)
+        ..id = state.player?.id
+        ..createdAt = state.player?.createdAt
+        ..gameRecords = List<GameRecord>.from(state.player?.gameRecords ?? [])
         ..maxStageAdition = state.player?.maxStageAdition ?? 0
         ..maxStageSubtruction = state.player?.maxStageSubtruction ?? 0
         ..maxStageMultiplication = state.player?.maxStageMultiplication ?? 0
@@ -482,6 +538,13 @@ class GameNotifier extends StateNotifier<GameState> {
       }
       final period =
           DateTime.now().difference(state.startTime!).inMilliseconds / 1000.0;
+      final gameRecord = GameRecord.create(
+        stageNumber: completedStageNumber,
+        operation: state.calcOperation!.operation,
+        durationSeconds: period,
+      );
+      player.gameRecords = [...player.gameRecords, gameRecord];
+      _applyUnlockedStagesToPlayer(player);
       evaluationMessage =
           '${state.player!.name} completed Stage $completedStageNumber in $operationName in ${period.toStringAsFixed(1)} Sec';
       state = state.copyWith(
@@ -496,6 +559,7 @@ class GameNotifier extends StateNotifier<GameState> {
         startTime: () => null,
         player: () => player,
       );
+      _persistPlayer(player);
     } else if (allAnswers - trueAnswers > 2) {
       evaluationMessage = '${state.player!.name} failed';
       state = state.copyWith(
@@ -559,7 +623,10 @@ class GameNotifier extends StateNotifier<GameState> {
         period: () => 0.0,
       );
       final player = Player()
+        ..id = state.player!.id
         ..name = state.player!.name
+        ..createdAt = state.player!.createdAt
+        ..gameRecords = List<GameRecord>.from(state.player!.gameRecords)
         ..maxStageAdition = state.player!.maxStageAdition
         ..maxStageSubtruction = state.player!.maxStageSubtruction
         ..maxStageMultiplication = state.player!.maxStageMultiplication
@@ -571,19 +638,15 @@ class GameNotifier extends StateNotifier<GameState> {
       if (state.calcOperation!.operation == '+' &&
           state.actualStageAddition + 1 < stages.length) {
         stageAdition++;
-        player.maxStageAdition++;
       } else if (state.calcOperation!.operation == '-' &&
           state.actualStageSubtraction + 1 < stages.length) {
         stageSubtruction++;
-        player.maxStageSubtruction++;
       } else if (state.calcOperation!.operation == '*' &&
           state.actualStageMultiplication + 1 < stages.length) {
         stageMultiplication++;
-        player.maxStageMultiplication++;
       } else if (state.calcOperation!.operation == '/' &&
           state.actualStageDivision + 1 < stages.length) {
         stageSectioning++;
-        player.maxStageSection++;
       }
 
       final nextStageIndex = state.calcOperation!.operation == '+'
@@ -638,6 +701,92 @@ class GameNotifier extends StateNotifier<GameState> {
     return state.actualStageDivision.clamp(0, lastIndex);
   }
 
+  List<GameRecord> getBestRecords(String operation, int stageNumber) {
+    final records = List<GameRecord>.from(state.player?.gameRecords ?? [])
+        .where(
+          (record) =>
+              record.operation == operation &&
+              record.stageNumber == stageNumber,
+        )
+        .toList()
+      ..sort((a, b) => a.durationSeconds.compareTo(b.durationSeconds));
+
+    if (records.length <= 3) return records;
+    return records.take(3).toList();
+  }
+
+  int getMaxUnlockedStage(String operation) {
+    final records = (state.player?.gameRecords ?? <GameRecord>[])
+        .where((record) => record.operation == operation)
+        .toList();
+    if (records.isEmpty) {
+      return 0;
+    }
+    return records
+        .map((record) => record.stageNumber)
+        .reduce((max, value) => value > max ? value : max);
+  }
+
+  int getHighestCompletedStage(String operation) {
+    final records = (state.player?.gameRecords ?? <GameRecord>[])
+        .where((record) => record.operation == operation)
+        .toList();
+    if (records.isEmpty) {
+      return 0;
+    }
+    return records
+        .map((record) => record.stageNumber)
+        .reduce((max, value) => value > max ? value : max);
+  }
+
+  int getNextPlayableStageIndex(String operation) {
+    final highestCompletedStage = getHighestCompletedStage(operation);
+    final nextPlayableIndex = highestCompletedStage;
+    return nextPlayableIndex.clamp(0, stages.length - 1);
+  }
+
+  int getCurrentStageForOperation(String operation) {
+    if (operation == '+') return state.actualStageAddition;
+    if (operation == '-') return state.actualStageSubtraction;
+    if (operation == '*') return state.actualStageMultiplication;
+    return state.actualStageDivision;
+  }
+
+  int _nextPlayableStageIndexFromRecords(
+    List<GameRecord> records,
+    String operation,
+  ) {
+    final operationRecords =
+        records.where((record) => record.operation == operation).toList();
+    if (operationRecords.isEmpty) {
+      return 0;
+    }
+    final highestCompletedStage = operationRecords
+        .map((record) => record.stageNumber)
+        .reduce((max, value) => value > max ? value : max);
+    final nextPlayableIndex = highestCompletedStage;
+    return nextPlayableIndex.clamp(0, stages.length - 1);
+  }
+
+  void _applyUnlockedStagesToPlayer(Player player) {
+    player.maxStageAdition =
+        _nextPlayableStageIndexFromRecords(player.gameRecords, '+');
+    player.maxStageSubtruction =
+        _nextPlayableStageIndexFromRecords(player.gameRecords, '-');
+    player.maxStageMultiplication =
+        _nextPlayableStageIndexFromRecords(player.gameRecords, '*');
+    player.maxStageSection =
+        _nextPlayableStageIndexFromRecords(player.gameRecords, '/');
+  }
+
+  Future<void> _persistPlayer(Player player) async {
+    if (player.id == null || player.name == null || player.createdAt == null) {
+      return;
+    }
+    final profile = player.toUserProfile();
+    await userStorageService.upsert(profile, validateDuplicateName: false);
+  }
+
   String _operationName(String operation) {
     if (operation == '+') return 'Addition';
     if (operation == '-') return 'Subtraction';
@@ -650,5 +799,6 @@ class GameNotifier extends StateNotifier<GameState> {
 final gameNotifierProvider =
     StateNotifierProvider<GameNotifier, GameState>((ref) {
   final engine = ref.read(gameEngineProvider);
-  return GameNotifier(engine);
+  final userStorage = ref.read(userStorageServiceProvider);
+  return GameNotifier(engine, userStorage);
 });

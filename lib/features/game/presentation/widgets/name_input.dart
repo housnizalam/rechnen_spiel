@@ -48,12 +48,27 @@ class _NameInputState extends ConsumerState<NameInput> {
       // Name already exists — still allow entering the game with it.
     }
     if (mounted) {
-      ref.read(gameNotifierProvider.notifier).giveName(name);
+      final existing = service.findByName(name);
+      if (existing != null) {
+        ref.read(gameNotifierProvider.notifier).giveName(
+              existing.name,
+              userId: existing.id,
+              createdAt: existing.createdAt,
+              gameRecords: existing.gameRecords,
+            );
+      } else {
+        ref.read(gameNotifierProvider.notifier).giveName(name);
+      }
     }
   }
 
   void _startWithExistingUser(UserProfile user) {
-    ref.read(gameNotifierProvider.notifier).giveName(user.name);
+    ref.read(gameNotifierProvider.notifier).giveName(
+          user.name,
+          userId: user.id,
+          createdAt: user.createdAt,
+          gameRecords: user.gameRecords,
+        );
   }
 
   Future<void> _showDeleteDialog(UserProfile user) async {

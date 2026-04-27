@@ -37,8 +37,13 @@ class _StartPageState extends ConsumerState<StartPage> {
 
   bool get _canStart => _nameController.text.trim().isNotEmpty;
 
-  void _enterGame(String name) {
-    ref.read(gameNotifierProvider.notifier).giveName(name);
+  void _enterGame(UserProfile profile) {
+    ref.read(gameNotifierProvider.notifier).giveName(
+          profile.name,
+          userId: profile.id,
+          createdAt: profile.createdAt,
+          gameRecords: profile.gameRecords,
+        );
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const GamePage()),
     );
@@ -49,14 +54,16 @@ class _StartPageState extends ConsumerState<StartPage> {
     if (name.isEmpty) return;
 
     final service = ref.read(userStorageServiceProvider);
+    late UserProfile profileToEnter;
     try {
       final profile = UserProfile.create(name);
       await service.save(profile);
+      profileToEnter = profile;
       ref.invalidate(savedUsersProvider);
     } on DuplicateNameException {
-      // Name already exists — enter the game with it anyway.
+      profileToEnter = service.findByName(name) ?? UserProfile.create(name);
     }
-    if (mounted) _enterGame(name);
+    if (mounted) _enterGame(profileToEnter);
   }
 
   Future<void> _showDeleteDialog(UserProfile user) async {
@@ -211,7 +218,7 @@ class _StartPageState extends ConsumerState<StartPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      onPressed: () => _enterGame(user.name),
+                      onPressed: () => _enterGame(user),
                       child: Text(user.name),
                     ),
                   ),

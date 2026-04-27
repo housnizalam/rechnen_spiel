@@ -1,13 +1,44 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 
+import '../../user/domain/game_record.dart';
+import '../../user/domain/user_profile.dart';
+
 /// Player profile with unlocked maximum stage per arithmetic operation.
 class Player {
+  String? id;
   String? name;
-  Player({this.name});
+  DateTime? createdAt;
+  List<GameRecord> gameRecords;
+
+  Player({
+    this.id,
+    this.name,
+    this.createdAt,
+    List<GameRecord>? gameRecords,
+  }) : gameRecords = gameRecords ?? <GameRecord>[];
+
   int maxStageAdition = 0;
   int maxStageSubtruction = 0;
   int maxStageMultiplication = 0;
   int maxStageSection = 0;
+
+  factory Player.fromUserProfile(UserProfile profile) {
+    return Player(
+      id: profile.id,
+      name: profile.name,
+      createdAt: profile.createdAt,
+      gameRecords: List<GameRecord>.from(profile.gameRecords),
+    );
+  }
+
+  UserProfile toUserProfile() {
+    return UserProfile(
+      id: id ?? '',
+      name: name ?? '',
+      createdAt: createdAt ?? DateTime.now(),
+      gameRecords: List<GameRecord>.from(gameRecords),
+    );
+  }
 
   // CalcOperation adition = CalcOperation('+');
   // CalcOperation subtraction = CalcOperation('-');
