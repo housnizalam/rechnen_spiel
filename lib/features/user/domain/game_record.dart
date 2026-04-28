@@ -7,6 +7,7 @@ class GameRecord {
   final int stageNumber;
   final String operation;
   final double durationSeconds;
+  final String gameMode;
 
   const GameRecord({
     required this.id,
@@ -14,12 +15,14 @@ class GameRecord {
     required this.stageNumber,
     required this.operation,
     required this.durationSeconds,
+    required this.gameMode,
   });
 
   factory GameRecord.create({
     required int stageNumber,
     required String operation,
     required double durationSeconds,
+    String gameMode = 'normal',
   }) {
     return GameRecord(
       id: const Uuid().v4(),
@@ -27,6 +30,7 @@ class GameRecord {
       stageNumber: stageNumber,
       operation: operation,
       durationSeconds: durationSeconds,
+      gameMode: gameMode,
     );
   }
 
@@ -36,6 +40,7 @@ class GameRecord {
     int? stageNumber,
     String? operation,
     double? durationSeconds,
+    String? gameMode,
   }) {
     return GameRecord(
       id: id ?? this.id,
@@ -43,6 +48,7 @@ class GameRecord {
       stageNumber: stageNumber ?? this.stageNumber,
       operation: operation ?? this.operation,
       durationSeconds: durationSeconds ?? this.durationSeconds,
+      gameMode: gameMode ?? this.gameMode,
     );
   }
 
@@ -53,6 +59,7 @@ class GameRecord {
       'stageNumber': stageNumber,
       'operation': operation,
       'durationSeconds': durationSeconds,
+      'gameMode': gameMode,
     };
   }
 
@@ -63,6 +70,7 @@ class GameRecord {
       stageNumber: (map['stageNumber'] as num).toInt(),
       operation: map['operation'] as String,
       durationSeconds: (map['durationSeconds'] as num).toDouble(),
+      gameMode: map['gameMode'] as String? ?? 'normal',
     );
   }
 }

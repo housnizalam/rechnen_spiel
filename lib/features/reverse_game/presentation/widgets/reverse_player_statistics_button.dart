@@ -1,43 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/game_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../user/domain/game_record.dart';
-import '../../state/game_notifier.dart';
+import '../../../user/state/user_providers.dart';
 
-class PlayerStatisticsButton extends ConsumerWidget {
-  const PlayerStatisticsButton({super.key, this.iconSize = 22});
+/// Statistics button for Reverse Operation mode.
+///
+/// Displays only reverse-mode game records, grouped by operation and stage,
+/// showing the best 3 fastest times for each (operation, stage) pair.
+class ReversePlayerStatisticsButton extends ConsumerWidget {
+  const ReversePlayerStatisticsButton({super.key, this.iconSize = 22});
 
   final double iconSize;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
-      tooltip: 'Statistics',
+      tooltip: 'Statistics (Reverse)',
       iconSize: iconSize,
       color: AppColors.gold,
       icon: const Icon(Icons.bar_chart_rounded),
       onPressed: () {
         showDialog<void>(
           context: context,
-          builder: (_) => const _PlayerStatisticsDialog(),
+          builder: (_) => const _ReversePlayerStatisticsDialog(),
         );
       },
     );
   }
 }
 
-class _PlayerStatisticsDialog extends ConsumerWidget {
-  const _PlayerStatisticsDialog();
+class _ReversePlayerStatisticsDialog extends ConsumerWidget {
+  const _ReversePlayerStatisticsDialog();
 
   static const List<String> _operationOrder = ['+', '-', '*', '/', 'R'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final player = ref.watch(currentUserProvider);
     final records = List<GameRecord>.from(
-      ref.watch(gameNotifierProvider).player?.gameRecords ?? <GameRecord>[],
-    ).where((record) => record.gameMode == 'normal').toList();
+      player?.gameRecords ?? <GameRecord>[],
+    ).where((record) => record.gameMode == GameModeKeys.reverse).toList();
     final grouped = _groupRecords(records);
     final hasData = grouped.isNotEmpty;
     final screen = MediaQuery.sizeOf(context);
@@ -73,7 +79,7 @@ class _PlayerStatisticsDialog extends ConsumerWidget {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Best Records',
+                      'Best Records (Reverse)',
                       style: AppTextStyles.title,
                     ),
                   ),

@@ -1,44 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../user/domain/game_record.dart';
-import '../../state/game_notifier.dart';
+import '../../domain/game_record.dart';
+import '../../domain/user_profile.dart';
 
-class PlayerStatisticsButton extends ConsumerWidget {
-  const PlayerStatisticsButton({super.key, this.iconSize = 22});
+class GlobalStatisticsButton extends StatelessWidget {
+  const GlobalStatisticsButton({
+    super.key,
+    required this.savedUsers,
+    this.iconSize = 22,
+  });
 
+  final List<UserProfile> savedUsers;
   final double iconSize;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return IconButton(
-      tooltip: 'Statistics',
+      tooltip: 'Global Statistics',
       iconSize: iconSize,
       color: AppColors.gold,
       icon: const Icon(Icons.bar_chart_rounded),
       onPressed: () {
         showDialog<void>(
           context: context,
-          builder: (_) => const _PlayerStatisticsDialog(),
+          builder: (_) => _GlobalStatisticsDialog(savedUsers: savedUsers),
         );
       },
     );
   }
 }
 
-class _PlayerStatisticsDialog extends ConsumerWidget {
-  const _PlayerStatisticsDialog();
+class _GlobalStatisticsDialog extends StatelessWidget {
+  const _GlobalStatisticsDialog({required this.savedUsers});
 
   static const List<String> _operationOrder = ['+', '-', '*', '/', 'R'];
 
+  final List<UserProfile> savedUsers;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final records = List<GameRecord>.from(
-      ref.watch(gameNotifierProvider).player?.gameRecords ?? <GameRecord>[],
-    ).where((record) => record.gameMode == 'normal').toList();
-    final grouped = _groupRecords(records);
+  Widget build(BuildContext context) {
+    final grouped = _groupRecords(savedUsers);
     final hasData = grouped.isNotEmpty;
     final screen = MediaQuery.sizeOf(context);
 
@@ -73,7 +76,7 @@ class _PlayerStatisticsDialog extends ConsumerWidget {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Best Records',
+                      'Global Best Records',
                       style: AppTextStyles.title,
                     ),
                   ),
@@ -120,26 +123,34 @@ class _PlayerStatisticsDialog extends ConsumerWidget {
     );
   }
 
-  Map<String, Map<int, List<GameRecord>>> _groupRecords(
-    List<GameRecord> records,
+  Map<String, Map<int, List<_NamedRecord>>> _groupRecords(
+    List<UserProfile> users,
   ) {
-    final grouped = <String, Map<int, List<GameRecord>>>{};
-    for (final record in records) {
-      final byOperation = grouped.putIfAbsent(
-        record.operation,
-        () => <int, List<GameRecord>>{},
-      );
-      final byStage = byOperation.putIfAbsent(
-        record.stageNumber,
-        () => <GameRecord>[],
-      );
-      byStage.add(record);
+    final grouped = <String, Map<int, List<_NamedRecord>>>{};
+
+    for (final user in users) {
+      for (final record in user.gameRecords) {
+        // Filter to only include normal mode records
+        if (record.gameMode != 'normal') {
+          continue;
+        }
+        final byOperation = grouped.putIfAbsent(
+          record.operation,
+          () => <int, List<_NamedRecord>>{},
+        );
+        final byStage = byOperation.putIfAbsent(
+          record.stageNumber,
+          () => <_NamedRecord>[],
+        );
+        byStage.add(_NamedRecord(playerName: user.name, record: record));
+      }
     }
 
     for (final operationEntry in grouped.entries) {
       for (final stageEntry in operationEntry.value.entries) {
         stageEntry.value.sort(
-          (a, b) => a.durationSeconds.compareTo(b.durationSeconds),
+          (a, b) =>
+              a.record.durationSeconds.compareTo(b.record.durationSeconds),
         );
         if (stageEntry.value.length > 3) {
           operationEntry.value[stageEntry.key] =
@@ -161,6 +172,13 @@ class _PlayerStatisticsDialog extends ConsumerWidget {
   }
 }
 
+class _NamedRecord {
+  const _NamedRecord({required this.playerName, required this.record});
+
+  final String playerName;
+  final GameRecord record;
+}
+
 class _OperationSection extends StatelessWidget {
   const _OperationSection({
     required this.operationLabel,
@@ -170,7 +188,7 @@ class _OperationSection extends StatelessWidget {
 
   final String operationLabel;
   final List<int> stages;
-  final Map<int, List<GameRecord>> stageMap;
+  final Map<int, List<_NamedRecord>> stageMap;
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +208,7 @@ class _OperationSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ...stages.map((stageNumber) {
-            final records = stageMap[stageNumber] ?? const <GameRecord>[];
+            final records = stageMap[stageNumber] ?? const <_NamedRecord>[];
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: _StageRecordSection(
@@ -212,7 +230,7 @@ class _StageRecordSection extends StatelessWidget {
   });
 
   final int stageNumber;
-  final List<GameRecord> records;
+  final List<_NamedRecord> records;
 
   @override
   Widget build(BuildContext context) {
@@ -237,11 +255,11 @@ class _StageRecordSection extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           ...List.generate(records.length, (index) {
-            final record = records[index];
+            final entry = records[index];
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Text(
-                '${index + 1}-) ${record.durationSeconds.toStringAsFixed(1)} Sec',
+                '${index + 1}-) ${entry.playerName} - ${entry.record.durationSeconds.toStringAsFixed(1)} Sec',
                 style: AppTextStyles.body.copyWith(
                   color: AppColors.goldMuted,
                   fontSize: 14,

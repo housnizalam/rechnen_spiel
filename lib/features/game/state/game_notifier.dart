@@ -639,6 +639,7 @@ class GameNotifier extends StateNotifier<GameState> {
         stageNumber: completedStageNumber,
         operation: selectedOperation,
         durationSeconds: period,
+        gameMode: 'normal',
       );
       player.gameRecords = [...player.gameRecords, gameRecord];
       _applyUnlockedStagesToPlayer(player);

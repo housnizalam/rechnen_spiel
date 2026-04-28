@@ -4,17 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../game/presentation/pages/game_page.dart';
+import '../../../game_mode/presentation/pages/game_mode_selection_page.dart';
+import '../../../game/domain/game_models.dart';
 import '../../../game/state/game_notifier.dart';
 import '../../data/user_storage_service.dart';
 import '../../domain/user_profile.dart';
 import '../../state/user_providers.dart';
+import '../widgets/global_statistics_button.dart';
 
 /// Initial screen where players select an existing profile or create a new one.
 ///
 /// After a player is chosen, [GameNotifier.giveName] is called and the app
-/// navigates to [GamePage] using [Navigator.pushReplacement] so the back
-/// button cannot return to this screen during a game session.
+/// navigates to [GameModeSelectionPage] using [Navigator.pushReplacement] so
+/// the back button cannot return to this screen during a game session.
 class StartPage extends ConsumerStatefulWidget {
   const StartPage({super.key});
 
@@ -41,6 +43,18 @@ class _StartPageState extends ConsumerState<StartPage> {
   bool get _canStart => _nameController.text.trim().isNotEmpty;
 
   void _enterGame(UserProfile profile) {
+    // Convert UserProfile to Player for currentUserProvider
+    final player = Player(
+      id: profile.id,
+      name: profile.name,
+      createdAt: profile.createdAt,
+      gameRecords: profile.gameRecords,
+    );
+
+    // Set the global current user
+    ref.read(currentUserProvider.notifier).state = player;
+
+    // Initialize GameNotifier with player data
     ref.read(gameNotifierProvider.notifier).giveName(
           profile.name,
           userId: profile.id,
@@ -48,7 +62,7 @@ class _StartPageState extends ConsumerState<StartPage> {
           gameRecords: profile.gameRecords,
         );
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const GamePage()),
+      MaterialPageRoute(builder: (_) => const GameModeSelectionPage()),
     );
   }
 
@@ -196,6 +210,18 @@ class _StartPageState extends ConsumerState<StartPage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Global Stats',
+                  style: AppTextStyles.subtitle,
+                ),
+              ),
+              GlobalStatisticsButton(savedUsers: savedUsers),
+            ],
+          ),
+          const SizedBox(height: 8),
           if (savedUsers.isNotEmpty) ...[
             const Text(
               'Choose a player',

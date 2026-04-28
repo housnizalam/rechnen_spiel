@@ -18,6 +18,12 @@ Random random = Random();
 /// Default operation instance used as initial fallback.
 var calqOperation = CalcOperation(calcOperationsList[0]);
 
+/// Game mode constants for distinguishing Normal and Reverse modes.
+abstract class GameModeKeys {
+  static const String normal = 'normal';
+  static const String reverse = 'reverse';
+}
+
 // import 'package:rechnen_spiel/bloc/bloc_classes.dart';
 
 // const String title = 'Rechnen Spiel';

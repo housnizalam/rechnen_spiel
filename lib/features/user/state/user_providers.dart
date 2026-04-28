@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/user_storage_service.dart';
 import '../domain/user_profile.dart';
+import '../../game/domain/game_models.dart';
 
 /// Provides the singleton [UserStorageService].
 ///
@@ -17,4 +18,16 @@ final userStorageServiceProvider = Provider<UserStorageService>((ref) {
 final savedUsersProvider = FutureProvider<List<UserProfile>>((ref) async {
   final service = ref.watch(userStorageServiceProvider);
   return service.loadAll();
+});
+
+/// Holds the currently selected [Player] throughout the app session.
+///
+/// This provider is set when a user selects or creates a profile from [StartPage].
+/// Both [GameNotifier] (normal mode) and [ReverseGameNotifier] (reverse mode)
+/// read from this provider, eliminating tight coupling between game modes.
+///
+/// When records are saved, they update this provider's player data and persist
+/// via [UserStorageService].
+final currentUserProvider = StateProvider<Player?>((ref) {
+  return null;
 });
