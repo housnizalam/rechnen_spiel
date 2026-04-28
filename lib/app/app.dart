@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
 import '../features/user/presentation/pages/start_page.dart';
 
 class MyApp extends StatelessWidget {
@@ -10,9 +11,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.red,
-      ),
+      theme: AppTheme.darkTheme,
       home: const StartPage(),
     );
   }

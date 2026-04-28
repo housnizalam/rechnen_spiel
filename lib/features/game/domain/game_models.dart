@@ -2,6 +2,7 @@
 
 import '../../user/domain/game_record.dart';
 import '../../user/domain/user_profile.dart';
+import '../../../core/constants/game_constants.dart';
 
 /// Player profile with unlocked maximum stage per arithmetic operation.
 class Player {
@@ -21,6 +22,7 @@ class Player {
   int maxStageSubtruction = 0;
   int maxStageMultiplication = 0;
   int maxStageSection = 0;
+  int maxStageRandom = 0;
 
   factory Player.fromUserProfile(UserProfile profile) {
     return Player(
@@ -48,7 +50,7 @@ class Player {
 
 /// Wraps an arithmetic operator and provides result calculation.
 class CalcOperation {
-  /// One of `+`, `-`, `*`, `/`.
+  /// One of `+`, `-`, `*`, `/`, or `R` (random).
   String operation;
   CalcOperation(this.operation);
 
@@ -69,17 +71,21 @@ class CalcOperation {
   // int stage12 = 0;
 
   /// Computes the result for the configured [operation].
+  /// When operation is 'R', randomly selects one of the four basic operations.
   int calculate(int firstNumber, int secondNumber) {
-    if (operation == '+') {
+    final op =
+        operation == 'R' ? ['+', '-', '*', '/'][random.nextInt(4)] : operation;
+
+    if (op == '+') {
       return firstNumber + secondNumber;
     }
-    if (operation == '-') {
+    if (op == '-') {
       return firstNumber - secondNumber;
     }
-    if (operation == '*') {
+    if (op == '*') {
       return firstNumber * secondNumber;
     }
-    if (operation == '/') {
+    if (op == '/') {
       return (firstNumber / secondNumber).ceil();
     }
     return 0;

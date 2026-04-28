@@ -17,11 +17,15 @@ class GeneratedQuestion {
   /// Four options shown to the player, including [correctAnswer].
   final List<int> answerOptions;
 
+  /// Actual arithmetic operation used to generate this exercise.
+  final String actualOperation;
+
   const GeneratedQuestion({
     required this.firstNumber,
     required this.secondNumber,
     required this.correctAnswer,
     required this.answerOptions,
+    required this.actualOperation,
   });
 }
 
@@ -57,11 +61,13 @@ class GameEngine {
   }) {
     final safeStageIndex = stageIndex.clamp(0, stages.length - 1);
     final maxNumber = stages[safeStageIndex];
+    final actualOperation =
+        operation == 'R' ? ['+', '-', '*', '/'][_random.nextInt(4)] : operation;
     int firstNumber;
     int secondNumber;
     int correctAnswer;
 
-    switch (operation) {
+    switch (actualOperation) {
       case '+':
         firstNumber = _random.nextInt(maxNumber);
         secondNumber = _random.nextInt(maxNumber);
@@ -83,7 +89,10 @@ class GameEngine {
         correctAnswer = firstNumber * secondNumber;
         break;
       case '/':
-        final generatedDivision = _generateDivisionQuestion(maxNumber);
+        final generatedDivision = _generateDivisionQuestion(
+          maxNumber,
+          safeStageIndex,
+        );
         firstNumber = generatedDivision.firstNumber;
         secondNumber = generatedDivision.secondNumber;
         correctAnswer = generatedDivision.correctAnswer;
@@ -101,6 +110,7 @@ class GameEngine {
       secondNumber: secondNumber,
       correctAnswer: correctAnswer,
       answerOptions: answerOptions,
+      actualOperation: actualOperation,
     );
   }
 
@@ -129,8 +139,33 @@ class GameEngine {
   /// - `secondNumber` is never zero.
   /// - `firstNumber` is divisible by `secondNumber`.
   /// - `correctAnswer` is an integer quotient.
-  _DivisionQuestion _generateDivisionQuestion(int maxNumber) {
+  _DivisionQuestion _generateDivisionQuestion(int maxNumber, int stageIndex) {
     final safeMax = max(maxNumber, 2);
+
+    // Stage 3+ (zero-based index >= 2): avoid trivial division tasks.
+    if (stageIndex >= 2) {
+      final compositeCandidates = <int>[];
+      for (var n = 4; n < safeMax; n++) {
+        if (_isComposite(n)) {
+          compositeCandidates.add(n);
+        }
+      }
+
+      if (compositeCandidates.isNotEmpty) {
+        final firstNumber =
+            compositeCandidates[_random.nextInt(compositeCandidates.length)];
+        final divisors = _properDivisors(firstNumber);
+        if (divisors.isNotEmpty) {
+          final secondNumber = divisors[_random.nextInt(divisors.length)];
+          final correctAnswer = firstNumber ~/ secondNumber;
+          return _DivisionQuestion(
+            firstNumber: firstNumber,
+            secondNumber: secondNumber,
+            correctAnswer: correctAnswer,
+          );
+        }
+      }
+    }
 
     while (true) {
       final secondNumber = _random.nextInt(safeMax - 1) + 1;
@@ -147,5 +182,31 @@ class GameEngine {
         correctAnswer: correctAnswer,
       );
     }
+  }
+
+  bool _isComposite(int number) {
+    if (number < 4) {
+      return false;
+    }
+    final limit = sqrt(number).floor();
+    for (var divisor = 2; divisor <= limit; divisor++) {
+      if (number % divisor == 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  List<int> _properDivisors(int number) {
+    final divisors = <int>[];
+    if (number < 4) {
+      return divisors;
+    }
+    for (var divisor = 2; divisor < number; divisor++) {
+      if (number % divisor == 0) {
+        divisors.add(divisor);
+      }
+    }
+    return divisors;
   }
 }

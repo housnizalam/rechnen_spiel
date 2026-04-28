@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../game/presentation/pages/game_page.dart';
 import '../../../game/state/game_notifier.dart';
 import '../../data/user_storage_service.dart';
@@ -70,16 +73,25 @@ class _StartPageState extends ConsumerState<StartPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete user'),
-        content: Text('Are you sure you want to delete "${user.name}"?'),
+        backgroundColor: AppColors.surfaceDark,
+        shape: AppDecorations.dialogDecoration().shape as OutlinedBorder,
+        title: const Text(
+          'Delete user',
+          style: AppTextStyles.subtitle,
+        ),
+        content: Text(
+          'Are you sure you want to delete "${user.name}"?',
+          style: AppTextStyles.body,
+        ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.goldMuted),
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.gold),
             child: const Text('Delete'),
           ),
         ],
@@ -102,11 +114,18 @@ class _StartPageState extends ConsumerState<StartPage> {
         builder: (ctx, setDialogState) {
           final canSave = controller.text.trim().isNotEmpty;
           return AlertDialog(
-            title: const Text('Edit name'),
+            backgroundColor: AppColors.surfaceDark,
+            shape: AppDecorations.dialogDecoration().shape as OutlinedBorder,
+            title: const Text(
+              'Edit name',
+              style: AppTextStyles.subtitle,
+            ),
             content: TextField(
               controller: controller,
               autofocus: true,
-              decoration: InputDecoration(
+              style: AppTextStyles.body,
+              cursorColor: AppColors.gold,
+              decoration: AppDecorations.inputDecoration(
                 labelText: 'Name',
                 errorText: dialogError,
               ),
@@ -114,10 +133,13 @@ class _StartPageState extends ConsumerState<StartPage> {
             ),
             actions: [
               TextButton(
+                style:
+                    TextButton.styleFrom(foregroundColor: AppColors.goldMuted),
                 onPressed: () => Navigator.of(ctx).pop(),
                 child: const Text('Cancel'),
               ),
               TextButton(
+                style: TextButton.styleFrom(foregroundColor: AppColors.gold),
                 onPressed: canSave
                     ? () async {
                         final service = ref.read(userStorageServiceProvider);
@@ -148,34 +170,14 @@ class _StartPageState extends ConsumerState<StartPage> {
     return Scaffold(
       body: Container(
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              Colors.red,
-              Color.fromARGB(255, 105, 5, 5),
-              Colors.black,
-              Colors.black,
-              Colors.black,
-              Colors.black,
-              Colors.black,
-              Colors.black,
-              Colors.black,
-              Color.fromARGB(255, 105, 5, 5),
-              Color.fromARGB(255, 105, 5, 5),
-              Colors.red,
-              Colors.red,
-            ],
-          ),
-        ),
+        decoration: AppDecorations.pageBackground(),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
               child: savedUsersAsync.when(
                 loading: () =>
-                    const CircularProgressIndicator(color: Colors.red),
+                    const CircularProgressIndicator(color: AppColors.gold),
                 error: (_, __) => _buildForm(savedUsers: const []),
                 data: (savedUsers) => _buildForm(savedUsers: savedUsers),
               ),
@@ -187,110 +189,101 @@ class _StartPageState extends ConsumerState<StartPage> {
   }
 
   Widget _buildForm({required List<UserProfile> savedUsers}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (savedUsers.isNotEmpty) ...[
-          const Text(
-            'Choose a player',
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: AppDecorations.cardDecoration(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (savedUsers.isNotEmpty) ...[
+            const Text(
+              'Choose a player',
+              style: AppTextStyles.title,
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ...savedUsers.map(
-            (user) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        textStyle: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+            const SizedBox(height: 16),
+            ...savedUsers.map(
+              (user) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: AppDecorations.buttonDecoration(),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: AppColors.gold,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            textStyle: AppTextStyles.button,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () => _enterGame(user),
+                          child: Text(user.name),
                         ),
                       ),
-                      onPressed: () => _enterGame(user),
-                      child: Text(user.name),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: 'Edit',
-                    icon: const Icon(Icons.edit, color: Colors.red),
-                    onPressed: () => _showEditDialog(user),
-                  ),
-                  IconButton(
-                    tooltip: 'Delete',
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _showDeleteDialog(user),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Edit',
+                      icon: const Icon(Icons.edit, color: AppColors.gold),
+                      onPressed: () => _showEditDialog(user),
+                    ),
+                    IconButton(
+                      tooltip: 'Delete',
+                      icon: const Icon(Icons.delete, color: AppColors.gold),
+                      onPressed: () => _showDeleteDialog(user),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 28),
-          const Divider(color: Colors.red, thickness: 1),
-          const SizedBox(height: 16),
-          const Text(
-            'Create a new Player',
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 28),
+            const Divider(color: AppColors.borderRed, thickness: 1),
+            const SizedBox(height: 16),
+            const Text(
+              'Create a new Player',
+              style: AppTextStyles.subtitle,
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
+            const SizedBox(height: 12),
+          ],
+          TextField(
+            controller: _nameController,
+            style: AppTextStyles.title.copyWith(fontSize: 28),
+            cursorColor: AppColors.gold,
+            decoration: AppDecorations.inputDecoration(
+              labelText: 'Enter your name',
+              errorText: _errorText,
+            ),
+            onSubmitted: (_) => _canStart ? _startWithNewName() : null,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
+          Container(
+            decoration: AppDecorations.buttonDecoration(),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                foregroundColor: AppColors.gold,
+                disabledForegroundColor: AppColors.goldMuted,
+                disabledBackgroundColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                textStyle: AppTextStyles.button.copyWith(fontSize: 22),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: _canStart ? _startWithNewName : null,
+              child: const Text('Start'),
+            ),
+          ),
         ],
-        TextField(
-          controller: _nameController,
-          style: const TextStyle(
-            color: Colors.red,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-          decoration: InputDecoration(
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.red, width: 2),
-            ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.red, width: 2),
-            ),
-            labelText: 'Enter your name',
-            labelStyle: const TextStyle(
-              color: Colors.red,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-            errorText: _errorText,
-          ),
-          onSubmitted: (_) => _canStart ? _startWithNewName() : null,
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: Colors.red.withValues(alpha: 0.3),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            textStyle: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          onPressed: _canStart ? _startWithNewName : null,
-          child: const Text('Start'),
-        ),
-      ],
+      ),
     );
   }
 }

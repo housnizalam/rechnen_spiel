@@ -20,39 +20,45 @@ class AnswerInput extends ConsumerWidget {
         state.answerOptions.length == 4 ? state.answerOptions : const [];
     final hideAnswers =
         state.trueAnswers == 8 || state.allAnswers - state.trueAnswers > 2;
+    final isReady = answers.length == 4 && !hideAnswers;
 
-    if (hideAnswers || answers.length != 4) {
-      return const SizedBox.expand();
-    }
+    return IgnorePointer(
+      ignoring: hideAnswers,
+      child: Opacity(
+        opacity: hideAnswers ? 0.0 : 1.0,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final spacing = compact ? 8.0 : 12.0;
+            final availableHeight =
+                constraints.maxHeight.isFinite ? constraints.maxHeight : 320.0;
+            final tileHeight = ((availableHeight - spacing) / 2)
+                .clamp(compact ? 64.0 : 78.0, 180.0)
+                .toDouble();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final spacing = compact ? 8.0 : 12.0;
-        final availableHeight =
-            constraints.maxHeight.isFinite ? constraints.maxHeight : 320.0;
-        final tileHeight = ((availableHeight - spacing) / 2)
-            .clamp(compact ? 64.0 : 78.0, 180.0)
-            .toDouble();
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          itemCount: answers.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: spacing,
-            crossAxisSpacing: spacing,
-            mainAxisExtent: tileHeight,
-          ),
-          itemBuilder: (context, index) {
-            return AnswerSheet(
-              answer: answers[index],
-              compact: compact,
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: 4,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: spacing,
+                crossAxisSpacing: spacing,
+                mainAxisExtent: tileHeight,
+              ),
+              itemBuilder: (context, index) {
+                final answer = isReady ? answers[index] : 0;
+                return AnswerSheet(
+                  key: ValueKey(index),
+                  answer: answer,
+                  compact: compact,
+                  isActive: isReady,
+                );
+              },
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
 }

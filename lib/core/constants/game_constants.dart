@@ -3,7 +3,8 @@ import 'dart:math';
 import '../../features/game/domain/game_models.dart';
 
 /// Supported operation symbols in UI cycling order.
-List<String> calcOperationsList = ['+', '-', '*', '/'];
+/// The 'R' operation generates a random operation each time.
+List<String> calcOperationsList = ['+', '-', '*', '/', 'R'];
 
 /// Difficulty bounds used as max random value per stage index.
 List<int> stages = [11, 21, 31, 51, 61, 101, 201, 301, 401, 501, 601, 1001];

@@ -21,7 +21,7 @@ class ExerciseDisplay extends ConsumerWidget {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Text(
-        '${state.firstNumber} ${state.calcOperation!.operation} ${state.secondNumber}',
+        '${state.firstNumber} ${state.actualOperation} ${state.secondNumber}',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.amber,

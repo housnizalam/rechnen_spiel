@@ -11,46 +11,52 @@ class StageDisplay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameNotifierProvider);
     final isLocked = state.status == GameStatus.playing;
-    final stageText = state.calcOperation!.operation == '+'
-        ? 'Stage ${state.actualStageAddition + 1}'
-        : state.calcOperation!.operation == '-'
-            ? 'Stage ${state.actualStageSubtraction + 1}'
-            : state.calcOperation!.operation == '*'
-                ? 'Stage ${state.actualStageMultiplication + 1}'
-                : 'Stage ${state.actualStageDivision + 1}';
+
+    final String stageText;
+    final bool canGoDown;
+    final bool canGoUp;
+
+    if (state.calcOperation!.operation == '+') {
+      stageText = 'Stage ${state.actualStageAddition + 1}';
+      canGoDown = state.actualStageAddition > 0;
+      canGoUp = state.actualStageAddition < state.player!.maxStageAdition;
+    } else if (state.calcOperation!.operation == '-') {
+      stageText = 'Stage ${state.actualStageSubtraction + 1}';
+      canGoDown = state.actualStageSubtraction > 0;
+      canGoUp =
+          state.actualStageSubtraction < state.player!.maxStageSubtruction;
+    } else if (state.calcOperation!.operation == '*') {
+      stageText = 'Stage ${state.actualStageMultiplication + 1}';
+      canGoDown = state.actualStageMultiplication > 0;
+      canGoUp = state.actualStageMultiplication <
+          state.player!.maxStageMultiplication;
+    } else if (state.calcOperation!.operation == '/') {
+      stageText = 'Stage ${state.actualStageDivision + 1}';
+      canGoDown = state.actualStageDivision > 0;
+      canGoUp = state.actualStageDivision < state.player!.maxStageSection;
+    } else {
+      // Random operation
+      stageText = 'Stage ${state.actualStageRandom + 1}';
+      canGoDown = state.actualStageRandom > 0;
+      canGoUp = state.actualStageRandom < state.player!.maxStageRandom;
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Opacity(
-          opacity: isLocked ? 0.4 : 1.0,
+          opacity: (isLocked || !canGoDown) ? 0.4 : 1.0,
           child: InkWell(
-            onTap: isLocked
+            onTap: (isLocked || !canGoDown)
                 ? null
                 : () {
-                    if (state.calcOperation!.operation == '+' &&
-                            state.actualStageAddition > 0 ||
-                        state.calcOperation!.operation == '-' &&
-                            state.actualStageSubtraction > 0 ||
-                        state.calcOperation!.operation == '*' &&
-                            state.actualStageMultiplication > 0 ||
-                        state.calcOperation!.operation == '/' &&
-                            state.actualStageDivision > 0) {
-                      ref.read(gameNotifierProvider.notifier).previousStage();
-                    }
+                    ref.read(gameNotifierProvider.notifier).previousStage();
                   },
             child: Icon(
               Icons.arrow_drop_down,
               size: 36,
-              color: (state.calcOperation!.operation == '+' &&
-                          state.actualStageAddition > 0) ||
-                      (state.calcOperation!.operation == '-' &&
-                          state.actualStageSubtraction > 0) ||
-                      (state.calcOperation!.operation == '*' &&
-                          state.actualStageMultiplication > 0) ||
-                      (state.calcOperation!.operation == '/' &&
-                          state.actualStageDivision > 0)
+              color: canGoDown && !isLocked
                   ? Colors.amber
                   : const Color.fromARGB(0, 158, 158, 158),
             ),
@@ -68,41 +74,17 @@ class StageDisplay extends ConsumerWidget {
           ),
         ),
         Opacity(
-          opacity: isLocked ? 0.4 : 1.0,
+          opacity: (isLocked || !canGoUp) ? 0.4 : 1.0,
           child: InkWell(
-            onTap: isLocked
+            onTap: (isLocked || !canGoUp)
                 ? null
                 : () {
-                    if (state.calcOperation!.operation == '+' &&
-                            state.actualStageAddition <
-                                state.player!.maxStageAdition ||
-                        state.calcOperation!.operation == '-' &&
-                            state.actualStageSubtraction <
-                                state.player!.maxStageSubtruction ||
-                        state.calcOperation!.operation == '*' &&
-                            state.actualStageMultiplication <
-                                state.player!.maxStageMultiplication ||
-                        state.calcOperation!.operation == '/' &&
-                            state.actualStageDivision <
-                                state.player!.maxStageSection) {
-                      ref.read(gameNotifierProvider.notifier).nextStage();
-                    }
+                    ref.read(gameNotifierProvider.notifier).nextStage();
                   },
             child: Icon(
               Icons.arrow_drop_up,
               size: 36,
-              color: state.calcOperation!.operation == '+' &&
-                          state.actualStageAddition <
-                              state.player!.maxStageAdition ||
-                      state.calcOperation!.operation == '-' &&
-                          state.actualStageSubtraction <
-                              state.player!.maxStageSubtruction ||
-                      state.calcOperation!.operation == '*' &&
-                          state.actualStageMultiplication <
-                              state.player!.maxStageMultiplication ||
-                      state.calcOperation!.operation == '/' &&
-                          state.actualStageDivision <
-                              state.player!.maxStageSection
+              color: canGoUp && !isLocked
                   ? Colors.amber
                   : const Color.fromARGB(0, 158, 158, 158),
             ),

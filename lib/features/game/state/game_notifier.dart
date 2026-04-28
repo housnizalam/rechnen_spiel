@@ -44,6 +44,10 @@ class GameState {
   /// Index of [calcOperationsList] used when cycling operations.
   final int operationIndex;
 
+  /// Actual operation used for the current exercise when calcOperation is Random.
+  /// Otherwise, matches calcOperation.operation.
+  final String actualOperation;
+
   /// Current unlocked stage index for addition.
   final int actualStageAddition;
 
@@ -55,6 +59,9 @@ class GameState {
 
   /// Current unlocked stage index for division.
   final int actualStageDivision;
+
+  /// Current unlocked stage index for random operation.
+  final int actualStageRandom;
 
   /// Left-hand operand of the current exercise.
   final int? firstNumber;
@@ -97,10 +104,12 @@ class GameState {
     this.isAnswerGiven = false,
     this.calcOperation,
     this.operationIndex = 0,
+    this.actualOperation = '+',
     this.actualStageAddition = 0,
     this.actualStageSubtraction = 0,
     this.actualStageMultiplication = 0,
     this.actualStageDivision = 0,
+    this.actualStageRandom = 0,
     this.firstNumber,
     this.secondNumber,
     this.correctAnswer = 0,
@@ -122,10 +131,12 @@ class GameState {
     bool Function()? isAnswerGiven,
     CalcOperation? Function()? calcOperation,
     int Function()? operationIndex,
+    String Function()? actualOperation,
     int Function()? actualStageAddition,
     int Function()? actualStageSubtraction,
     int Function()? actualStageMultiplication,
     int Function()? actualStageDivision,
+    int Function()? actualStageRandom,
     int? Function()? firstNumber,
     int? Function()? secondNumber,
     int Function()? correctAnswer,
@@ -150,6 +161,8 @@ class GameState {
           calcOperation == null ? this.calcOperation : calcOperation(),
       operationIndex:
           operationIndex == null ? this.operationIndex : operationIndex(),
+      actualOperation:
+          actualOperation == null ? this.actualOperation : actualOperation(),
       actualStageAddition: actualStageAddition == null
           ? this.actualStageAddition
           : actualStageAddition(),
@@ -162,6 +175,9 @@ class GameState {
       actualStageDivision: actualStageDivision == null
           ? this.actualStageDivision
           : actualStageDivision(),
+      actualStageRandom: actualStageRandom == null
+          ? this.actualStageRandom
+          : actualStageRandom(),
       firstNumber: firstNumber == null ? this.firstNumber : firstNumber(),
       secondNumber: secondNumber == null ? this.secondNumber : secondNumber(),
       correctAnswer:
@@ -217,7 +233,10 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Cycles to the next arithmetic operation and resets round-local state.
   ///
   /// Call this from operation-switch UI actions. It keeps per-operation stage
-  /// indices, but clears the current question, counters, and feedback.
+  /// cycles through supported operations.
+  /// If not playing, it changes the [operationIndex] and resets staging data.
+  ///
+  /// The new operation updates [calcOperation], clears stage-progress indices, but clears the current question, counters, and feedback.
   void chooseOperation() {
     if (state.status == GameStatus.playing) {
       if (kDebugMode) {
@@ -226,15 +245,37 @@ class GameNotifier extends StateNotifier<GameState> {
       return;
     }
     int operationIndex = state.operationIndex;
-    if (operationIndex == 3) {
+    if (operationIndex >= calcOperationsList.length - 1) {
       operationIndex = 0;
     } else {
       operationIndex++;
     }
+    _applyOperationSelection(operationIndex);
+  }
+
+  /// Selects a concrete operation symbol from [calcOperationsList].
+  void selectOperation(String operationSymbol) {
+    if (state.status == GameStatus.playing) {
+      if (kDebugMode) {
+        debugPrint('[GameNotifier] selectOperation ignored while playing');
+      }
+      return;
+    }
+    final operationIndex = calcOperationsList.indexOf(operationSymbol);
+    if (operationIndex < 0) {
+      return;
+    }
+    _applyOperationSelection(operationIndex);
+  }
+
+  void _applyOperationSelection(int operationIndex) {
     final calcOperation = CalcOperation(calcOperationsList[operationIndex]);
     state = state.copyWith(
       operationIndex: () => operationIndex,
       calcOperation: () => calcOperation,
+      actualOperation: () => calcOperationsList[operationIndex] == 'R'
+          ? '+'
+          : calcOperationsList[operationIndex],
       allAnswers: () => 0,
       trueAnswers: () => 0,
       answer: () => null,
@@ -263,6 +304,7 @@ class GameNotifier extends StateNotifier<GameState> {
     final multiplicationIndex =
         _nextPlayableStageIndexFromRecords(records, '*');
     final divisionIndex = _nextPlayableStageIndexFromRecords(records, '/');
+    final randomIndex = _nextPlayableStageIndexFromRecords(records, 'R');
 
     final player = Player(
       id: userId,
@@ -274,16 +316,19 @@ class GameNotifier extends StateNotifier<GameState> {
     player.maxStageSubtruction = subtractionIndex;
     player.maxStageMultiplication = multiplicationIndex;
     player.maxStageSection = divisionIndex;
+    player.maxStageRandom = randomIndex;
 
     final calcOperation = CalcOperation('+');
     state = state.copyWith(
       player: () => player,
       calcOperation: () => calcOperation,
       operationIndex: () => 0,
+      actualOperation: () => '+',
       actualStageAddition: () => additionIndex,
       actualStageSubtraction: () => subtractionIndex,
       actualStageMultiplication: () => multiplicationIndex,
       actualStageDivision: () => divisionIndex,
+      actualStageRandom: () => randomIndex,
       allAnswers: () => 0,
       trueAnswers: () => 0,
       firstNumber: () => null,
@@ -293,6 +338,7 @@ class GameNotifier extends StateNotifier<GameState> {
       evaluationMessage: () => '',
       isQuestionGiven: () => false,
       isAnswerGiven: () => false,
+      answer: () => null,
       startTime: () => null,
       period: () => 0.0,
       status: () => GameStatus.idle,
@@ -320,6 +366,7 @@ class GameNotifier extends StateNotifier<GameState> {
     int actualStageSubtraction = state.actualStageSubtraction;
     int actualStageMultiplication = state.actualStageMultiplication;
     int actualStageDivision = state.actualStageDivision;
+    int actualStageRandom = state.actualStageRandom;
     if (state.calcOperation!.operation == '+') {
       actualStageAddition++;
     } else if (state.calcOperation!.operation == '-') {
@@ -328,12 +375,15 @@ class GameNotifier extends StateNotifier<GameState> {
       actualStageMultiplication++;
     } else if (state.calcOperation!.operation == '/') {
       actualStageDivision++;
+    } else if (state.calcOperation!.operation == 'R') {
+      actualStageRandom++;
     }
     state = state.copyWith(
       actualStageAddition: () => actualStageAddition,
       actualStageSubtraction: () => actualStageSubtraction,
       actualStageMultiplication: () => actualStageMultiplication,
       actualStageDivision: () => actualStageDivision,
+      actualStageRandom: () => actualStageRandom,
       isQuestionGiven: () => false,
       allAnswers: () => 0,
       trueAnswers: () => 0,
@@ -385,6 +435,7 @@ class GameNotifier extends StateNotifier<GameState> {
     int actualStageSubtraction = state.actualStageSubtraction;
     int actualStageMultiplication = state.actualStageMultiplication;
     int actualStageDivision = state.actualStageDivision;
+    int actualStageRandom = state.actualStageRandom;
     if (state.calcOperation!.operation == '+') {
       actualStageAddition--;
     } else if (state.calcOperation!.operation == '-') {
@@ -393,12 +444,15 @@ class GameNotifier extends StateNotifier<GameState> {
       actualStageMultiplication--;
     } else if (state.calcOperation!.operation == '/') {
       actualStageDivision--;
+    } else if (state.calcOperation!.operation == 'R') {
+      actualStageRandom--;
     }
     state = state.copyWith(
       actualStageAddition: () => actualStageAddition,
       actualStageSubtraction: () => actualStageSubtraction,
       actualStageMultiplication: () => actualStageMultiplication,
       actualStageDivision: () => actualStageDivision,
+      actualStageRandom: () => actualStageRandom,
       allAnswers: () => 0,
       trueAnswers: () => 0,
       firstNumber: () => null,
@@ -429,6 +483,7 @@ class GameNotifier extends StateNotifier<GameState> {
       isQuestionGiven: () => true,
       firstNumber: () => generatedQuestion.firstNumber,
       secondNumber: () => generatedQuestion.secondNumber,
+      actualOperation: () => generatedQuestion.actualOperation,
       correctAnswer: () => generatedQuestion.correctAnswer,
       answerOptions: () => generatedQuestion.answerOptions,
       answer: () => null,
@@ -470,6 +525,7 @@ class GameNotifier extends StateNotifier<GameState> {
     if (!state.isQuestionGiven) {
       final startTime = DateTime.now();
       final stageIndex = _activeStageIndex();
+
       _debugGenerationLog('startGame', stageIndex);
       final generatedQuestion = gameEngine.generateQuestion(
         operation: state.calcOperation!.operation,
@@ -479,6 +535,7 @@ class GameNotifier extends StateNotifier<GameState> {
       state = state.copyWith(
         firstNumber: () => generatedQuestion.firstNumber,
         secondNumber: () => generatedQuestion.secondNumber,
+        actualOperation: () => generatedQuestion.actualOperation,
         correctAnswer: () => generatedQuestion.correctAnswer,
         answerOptions: () => generatedQuestion.answerOptions,
         isQuestionGiven: () => true,
@@ -518,7 +575,8 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     if (trueAnswers > 7) {
       final completedStageNumber = _activeStageIndex() + 1;
-      final operationName = _operationName(state.calcOperation!.operation);
+      final selectedOperation = state.calcOperation!.operation;
+      final operationName = _operationName(selectedOperation);
       final player = Player(name: state.player?.name)
         ..id = state.player?.id
         ..createdAt = state.player?.createdAt
@@ -526,21 +584,24 @@ class GameNotifier extends StateNotifier<GameState> {
         ..maxStageAdition = state.player?.maxStageAdition ?? 0
         ..maxStageSubtruction = state.player?.maxStageSubtruction ?? 0
         ..maxStageMultiplication = state.player?.maxStageMultiplication ?? 0
-        ..maxStageSection = state.player?.maxStageSection ?? 0;
-      if (state.calcOperation!.operation == '+') {
+        ..maxStageSection = state.player?.maxStageSection ?? 0
+        ..maxStageRandom = state.player?.maxStageRandom ?? 0;
+      if (selectedOperation == '+') {
         player.maxStageAdition++;
-      } else if (state.calcOperation!.operation == '-') {
+      } else if (selectedOperation == '-') {
         player.maxStageSubtruction++;
-      } else if (state.calcOperation!.operation == '*') {
+      } else if (selectedOperation == '*') {
         player.maxStageMultiplication++;
-      } else if (state.calcOperation!.operation == '/') {
+      } else if (selectedOperation == '/') {
         player.maxStageSection++;
+      } else if (selectedOperation == 'R') {
+        player.maxStageRandom++;
       }
       final period =
           DateTime.now().difference(state.startTime!).inMilliseconds / 1000.0;
       final gameRecord = GameRecord.create(
         stageNumber: completedStageNumber,
-        operation: state.calcOperation!.operation,
+        operation: selectedOperation,
         durationSeconds: period,
       );
       player.gameRecords = [...player.gameRecords, gameRecord];
@@ -607,6 +668,7 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(
       firstNumber: () => generatedQuestion.firstNumber,
       secondNumber: () => generatedQuestion.secondNumber,
+      actualOperation: () => generatedQuestion.actualOperation,
       correctAnswer: () => generatedQuestion.correctAnswer,
       answerOptions: () => generatedQuestion.answerOptions,
       isQuestionGiven: () => true,
@@ -630,11 +692,13 @@ class GameNotifier extends StateNotifier<GameState> {
         ..maxStageAdition = state.player!.maxStageAdition
         ..maxStageSubtruction = state.player!.maxStageSubtruction
         ..maxStageMultiplication = state.player!.maxStageMultiplication
-        ..maxStageSection = state.player!.maxStageSection;
+        ..maxStageSection = state.player!.maxStageSection
+        ..maxStageRandom = state.player!.maxStageRandom;
       int stageAdition = state.actualStageAddition;
       int stageSubtruction = state.actualStageSubtraction;
       int stageMultiplication = state.actualStageMultiplication;
       int stageSectioning = state.actualStageDivision;
+      int stageRandom = state.actualStageRandom;
       if (state.calcOperation!.operation == '+' &&
           state.actualStageAddition + 1 < stages.length) {
         stageAdition++;
@@ -647,6 +711,9 @@ class GameNotifier extends StateNotifier<GameState> {
       } else if (state.calcOperation!.operation == '/' &&
           state.actualStageDivision + 1 < stages.length) {
         stageSectioning++;
+      } else if (state.calcOperation!.operation == 'R' &&
+          state.actualStageRandom + 1 < stages.length) {
+        stageRandom++;
       }
 
       final nextStageIndex = state.calcOperation!.operation == '+'
@@ -655,7 +722,9 @@ class GameNotifier extends StateNotifier<GameState> {
               ? stageSubtruction
               : state.calcOperation!.operation == '*'
                   ? stageMultiplication
-                  : stageSectioning;
+                  : state.calcOperation!.operation == '/'
+                      ? stageSectioning
+                      : stageRandom;
 
       final generatedQuestion = gameEngine.generateQuestion(
         operation: state.calcOperation!.operation,
@@ -671,6 +740,7 @@ class GameNotifier extends StateNotifier<GameState> {
         actualStageSubtraction: () => stageSubtruction,
         actualStageMultiplication: () => stageMultiplication,
         actualStageDivision: () => stageSectioning,
+        actualStageRandom: () => stageRandom,
         allAnswers: () => 0,
         startTime: () => nextRunStart,
         trueAnswers: () => 0,
@@ -680,6 +750,7 @@ class GameNotifier extends StateNotifier<GameState> {
         evaluationMessage: () => '',
         firstNumber: () => generatedQuestion.firstNumber,
         secondNumber: () => generatedQuestion.secondNumber,
+        actualOperation: () => generatedQuestion.actualOperation,
         correctAnswer: () => generatedQuestion.correctAnswer,
         answerOptions: () => generatedQuestion.answerOptions,
         status: () => GameStatus.playing,
@@ -698,7 +769,13 @@ class GameNotifier extends StateNotifier<GameState> {
     if (state.calcOperation!.operation == '*') {
       return state.actualStageMultiplication.clamp(0, lastIndex);
     }
-    return state.actualStageDivision.clamp(0, lastIndex);
+    if (state.calcOperation!.operation == '/') {
+      return state.actualStageDivision.clamp(0, lastIndex);
+    }
+    if (state.calcOperation!.operation == 'R') {
+      return state.actualStageRandom.clamp(0, lastIndex);
+    }
+    return 0;
   }
 
   List<GameRecord> getBestRecords(String operation, int stageNumber) {
@@ -749,6 +826,8 @@ class GameNotifier extends StateNotifier<GameState> {
     if (operation == '+') return state.actualStageAddition;
     if (operation == '-') return state.actualStageSubtraction;
     if (operation == '*') return state.actualStageMultiplication;
+    if (operation == '/') return state.actualStageDivision;
+    if (operation == 'R') return state.actualStageRandom;
     return state.actualStageDivision;
   }
 
@@ -777,6 +856,8 @@ class GameNotifier extends StateNotifier<GameState> {
         _nextPlayableStageIndexFromRecords(player.gameRecords, '*');
     player.maxStageSection =
         _nextPlayableStageIndexFromRecords(player.gameRecords, '/');
+    player.maxStageRandom =
+        _nextPlayableStageIndexFromRecords(player.gameRecords, 'R');
   }
 
   Future<void> _persistPlayer(Player player) async {
@@ -791,7 +872,9 @@ class GameNotifier extends StateNotifier<GameState> {
     if (operation == '+') return 'Addition';
     if (operation == '-') return 'Subtraction';
     if (operation == '*') return 'Multiplication';
-    return 'Division';
+    if (operation == '/') return 'Division';
+    if (operation == 'R') return 'Random';
+    return 'Unknown';
   }
 }
 
