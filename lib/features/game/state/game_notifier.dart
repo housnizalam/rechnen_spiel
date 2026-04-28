@@ -13,6 +13,9 @@ import '../domain/game_models.dart';
 /// High-level lifecycle for a stage play session.
 enum GameStatus { idle, playing, won, failed }
 
+/// One-shot UI feedback events emitted from game state transitions.
+enum GameFeedbackType { none, correct, wrong, stageSuccess, newRecord, loss }
+
 /// Immutable UI/game snapshot consumed by Riverpod widgets.
 ///
 /// The state carries both transient round data (current numbers/options)
@@ -92,6 +95,12 @@ class GameState {
   /// Current stage lifecycle status.
   final GameStatus status;
 
+  /// Last game feedback event the UI should react to.
+  final GameFeedbackType lastFeedbackType;
+
+  /// Monotonic counter used to emit repeated feedback of the same type.
+  final int feedbackVersion;
+
   /// Active player profile and unlocked stage progress.
   final Player? player;
 
@@ -119,6 +128,8 @@ class GameState {
     this.allAnswers = 0,
     this.period = 0.0,
     this.status = GameStatus.idle,
+    this.lastFeedbackType = GameFeedbackType.none,
+    this.feedbackVersion = 0,
     this.player,
   });
 
@@ -146,6 +157,8 @@ class GameState {
     int Function()? allAnswers,
     double Function()? period,
     GameStatus Function()? status,
+    GameFeedbackType Function()? lastFeedbackType,
+    int Function()? feedbackVersion,
     Player? Function()? player,
   }) {
     return GameState(
@@ -191,6 +204,10 @@ class GameState {
       allAnswers: allAnswers == null ? this.allAnswers : allAnswers(),
       period: period == null ? this.period : period(),
       status: status == null ? this.status : status(),
+      lastFeedbackType:
+          lastFeedbackType == null ? this.lastFeedbackType : lastFeedbackType(),
+      feedbackVersion:
+          feedbackVersion == null ? this.feedbackVersion : feedbackVersion(),
       player: player == null ? this.player : player(),
     );
   }
@@ -565,13 +582,18 @@ class GameNotifier extends StateNotifier<GameState> {
     int trueAnswers = state.trueAnswers;
     int allAnswers = state.allAnswers;
     String evaluationMessage = '';
+    GameFeedbackType feedbackType = GameFeedbackType.none;
     if (answer == state.correctAnswer) {
       trueAnswers++;
       allAnswers++;
       evaluationMessage = 'Correct: $trueAnswers of $allAnswers';
+      if (trueAnswers <= 7) {
+        feedbackType = GameFeedbackType.correct;
+      }
     } else {
       allAnswers++;
       evaluationMessage = 'Wrong: $trueAnswers of $allAnswers';
+      feedbackType = GameFeedbackType.wrong;
     }
     if (trueAnswers > 7) {
       final completedStageNumber = _activeStageIndex() + 1;
@@ -599,6 +621,20 @@ class GameNotifier extends StateNotifier<GameState> {
       }
       final period =
           DateTime.now().difference(state.startTime!).inMilliseconds / 1000.0;
+      final existingStageRecords = player.gameRecords
+          .where(
+            (record) =>
+                record.operation == selectedOperation &&
+                record.stageNumber == completedStageNumber,
+          )
+          .toList();
+      final bestPreviousDuration = existingStageRecords.isEmpty
+          ? null
+          : existingStageRecords
+              .map((record) => record.durationSeconds)
+              .reduce((best, value) => value < best ? value : best);
+      final isNewRecord =
+          bestPreviousDuration == null || period < bestPreviousDuration;
       final gameRecord = GameRecord.create(
         stageNumber: completedStageNumber,
         operation: selectedOperation,
@@ -606,6 +642,9 @@ class GameNotifier extends StateNotifier<GameState> {
       );
       player.gameRecords = [...player.gameRecords, gameRecord];
       _applyUnlockedStagesToPlayer(player);
+      feedbackType = isNewRecord
+          ? GameFeedbackType.newRecord
+          : GameFeedbackType.stageSuccess;
       evaluationMessage =
           '${state.player!.name} completed Stage $completedStageNumber in $operationName in ${period.toStringAsFixed(1)} Sec';
       state = state.copyWith(
@@ -618,10 +657,13 @@ class GameNotifier extends StateNotifier<GameState> {
         stage: () => state.stage + 1,
         period: () => period,
         startTime: () => null,
+        lastFeedbackType: () => feedbackType,
+        feedbackVersion: () => state.feedbackVersion + 1,
         player: () => player,
       );
       _persistPlayer(player);
     } else if (allAnswers - trueAnswers > 2) {
+      feedbackType = GameFeedbackType.loss;
       evaluationMessage = '${state.player!.name} failed';
       state = state.copyWith(
         isQuestionGiven: () => false,
@@ -632,6 +674,8 @@ class GameNotifier extends StateNotifier<GameState> {
         period: () => 0.0,
         startTime: () => null,
         status: () => GameStatus.failed,
+        lastFeedbackType: () => feedbackType,
+        feedbackVersion: () => state.feedbackVersion + 1,
       );
     } else {
       state = state.copyWith(
@@ -641,6 +685,8 @@ class GameNotifier extends StateNotifier<GameState> {
         trueAnswers: () => trueAnswers,
         evaluationMessage: () => evaluationMessage,
         status: () => GameStatus.playing,
+        lastFeedbackType: () => feedbackType,
+        feedbackVersion: () => state.feedbackVersion + 1,
       );
     }
   }
