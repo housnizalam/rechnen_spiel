@@ -1,77 +1,30 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/game_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/game_record.dart';
-import '../../domain/user_profile.dart';
 
-class GlobalStatisticsButton extends StatelessWidget {
-  const GlobalStatisticsButton({
+class GameStatisticsDialog extends StatelessWidget {
+  const GameStatisticsDialog({
     super.key,
-    required this.savedUsers,
-    this.iconSize = 22,
+    required this.records,
+    required this.gameMode,
+    this.title = 'Best Records',
   });
 
-  final List<UserProfile> savedUsers;
-  final double iconSize;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: 'Global Statistics',
-      iconSize: iconSize,
-      color: AppColors.gold,
-      icon: const Icon(Icons.bar_chart_rounded),
-      onPressed: () {
-        showDialog<void>(
-          context: context,
-          builder: (_) => _GlobalStatisticsDialog(savedUsers: savedUsers),
-        );
-      },
-    );
-  }
-}
-
-class _GlobalStatisticsDialog extends StatelessWidget {
-  const _GlobalStatisticsDialog({required this.savedUsers});
-
   static const List<String> _operationOrder = ['+', '-', '*', '/', 'R'];
-  static const List<String> _modeOrder = [
-    GameModeKeys.normal,
-    GameModeKeys.reverse,
-  ];
 
-  final List<UserProfile> savedUsers;
+  final List<GameRecord> records;
+  final String gameMode;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
-    final grouped = _groupRecords(savedUsers);
+    final filteredRecords = records
+        .where((record) => record.gameMode == gameMode)
+        .toList(growable: false);
+    final grouped = _groupRecords(filteredRecords);
     final hasData = grouped.isNotEmpty;
-    final sections = <Widget>[];
-    for (final operation in _operationOrder) {
-      for (final gameMode in _modeOrder) {
-        final stageMap =
-            grouped[_GlobalGroupKey(operation: operation, gameMode: gameMode)];
-        if (stageMap == null || stageMap.isEmpty) {
-          continue;
-        }
-        final stages = stageMap.keys.toList()..sort();
-        sections.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: _OperationSection(
-              operationLabel: _groupLabel(
-                operation: operation,
-                gameMode: gameMode,
-              ),
-              stages: stages,
-              stageMap: stageMap,
-            ),
-          ),
-        );
-      }
-    }
     final screen = MediaQuery.sizeOf(context);
 
     return Dialog(
@@ -103,9 +56,9 @@ class _GlobalStatisticsDialog extends StatelessWidget {
                 children: [
                   const Icon(Icons.analytics_rounded, color: AppColors.gold),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Global Best Records',
+                      title,
                       style: AppTextStyles.title,
                     ),
                   ),
@@ -119,7 +72,25 @@ class _GlobalStatisticsDialog extends StatelessWidget {
               const SizedBox(height: 12),
               Expanded(
                 child: hasData
-                    ? ListView(children: sections)
+                    ? ListView.builder(
+                        itemCount: _operationOrder.length,
+                        itemBuilder: (context, index) {
+                          final operation = _operationOrder[index];
+                          final stageMap = grouped[operation];
+                          if (stageMap == null || stageMap.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          final stages = stageMap.keys.toList()..sort();
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: _OperationSection(
+                              operationLabel: _operationLabel(operation),
+                              stages: stages,
+                              stageMap: stageMap,
+                            ),
+                          );
+                        },
+                      )
                     : const Center(
                         child: Text(
                           'No completed stages yet.',
@@ -134,35 +105,26 @@ class _GlobalStatisticsDialog extends StatelessWidget {
     );
   }
 
-  Map<_GlobalGroupKey, Map<int, List<_NamedRecord>>> _groupRecords(
-    List<UserProfile> users,
+  Map<String, Map<int, List<GameRecord>>> _groupRecords(
+    List<GameRecord> records,
   ) {
-    final grouped = <_GlobalGroupKey, Map<int, List<_NamedRecord>>>{};
-
-    for (final user in users) {
-      for (final record in user.gameRecords) {
-        final normalizedMode = _normalizeGameMode(record.gameMode);
-        final groupKey = _GlobalGroupKey(
-          operation: record.operation,
-          gameMode: normalizedMode,
-        );
-        final byOperationAndMode = grouped.putIfAbsent(
-          groupKey,
-          () => <int, List<_NamedRecord>>{},
-        );
-        final byStage = byOperationAndMode.putIfAbsent(
-          record.stageNumber,
-          () => <_NamedRecord>[],
-        );
-        byStage.add(_NamedRecord(playerName: user.name, record: record));
-      }
+    final grouped = <String, Map<int, List<GameRecord>>>{};
+    for (final record in records) {
+      final byOperation = grouped.putIfAbsent(
+        record.operation,
+        () => <int, List<GameRecord>>{},
+      );
+      final byStage = byOperation.putIfAbsent(
+        record.stageNumber,
+        () => <GameRecord>[],
+      );
+      byStage.add(record);
     }
 
     for (final operationEntry in grouped.entries) {
       for (final stageEntry in operationEntry.value.entries) {
         stageEntry.value.sort(
-          (a, b) =>
-              a.record.durationSeconds.compareTo(b.record.durationSeconds),
+          (a, b) => a.durationSeconds.compareTo(b.durationSeconds),
         );
         if (stageEntry.value.length > 3) {
           operationEntry.value[stageEntry.key] =
@@ -174,12 +136,6 @@ class _GlobalStatisticsDialog extends StatelessWidget {
     return grouped;
   }
 
-  String _normalizeGameMode(String gameMode) {
-    return gameMode == GameModeKeys.reverse
-        ? GameModeKeys.reverse
-        : GameModeKeys.normal;
-  }
-
   String _operationLabel(String symbol) {
     if (symbol == '+') return 'Addition';
     if (symbol == '-') return 'Subtraction';
@@ -188,47 +144,6 @@ class _GlobalStatisticsDialog extends StatelessWidget {
     if (symbol == 'R') return 'Random';
     return 'Unknown';
   }
-
-  String _modeLabel(String gameMode) {
-    if (gameMode == GameModeKeys.reverse) {
-      return 'Reverse';
-    }
-    return 'Normal';
-  }
-
-  String _groupLabel({
-    required String operation,
-    required String gameMode,
-  }) {
-    return '${_operationLabel(operation)} - ${_modeLabel(gameMode)}';
-  }
-}
-
-class _NamedRecord {
-  const _NamedRecord({required this.playerName, required this.record});
-
-  final String playerName;
-  final GameRecord record;
-}
-
-class _GlobalGroupKey {
-  const _GlobalGroupKey({required this.operation, required this.gameMode});
-
-  final String operation;
-  final String gameMode;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is _GlobalGroupKey &&
-        other.operation == operation &&
-        other.gameMode == gameMode;
-  }
-
-  @override
-  int get hashCode => Object.hash(operation, gameMode);
 }
 
 class _OperationSection extends StatelessWidget {
@@ -240,7 +155,7 @@ class _OperationSection extends StatelessWidget {
 
   final String operationLabel;
   final List<int> stages;
-  final Map<int, List<_NamedRecord>> stageMap;
+  final Map<int, List<GameRecord>> stageMap;
 
   @override
   Widget build(BuildContext context) {
@@ -260,12 +175,12 @@ class _OperationSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ...stages.map((stageNumber) {
-            final records = stageMap[stageNumber] ?? const <_NamedRecord>[];
+            final stageRecords = stageMap[stageNumber] ?? const <GameRecord>[];
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: _StageRecordSection(
                 stageNumber: stageNumber,
-                records: records,
+                records: stageRecords,
               ),
             );
           }),
@@ -282,7 +197,7 @@ class _StageRecordSection extends StatelessWidget {
   });
 
   final int stageNumber;
-  final List<_NamedRecord> records;
+  final List<GameRecord> records;
 
   @override
   Widget build(BuildContext context) {
@@ -307,11 +222,11 @@ class _StageRecordSection extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           ...List.generate(records.length, (index) {
-            final entry = records[index];
+            final record = records[index];
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Text(
-                '${index + 1}-) ${entry.playerName} - ${entry.record.durationSeconds.toStringAsFixed(1)} Sec',
+                '${index + 1}-) ${record.durationSeconds.toStringAsFixed(1)} Sec',
                 style: AppTextStyles.body.copyWith(
                   color: AppColors.goldMuted,
                   fontSize: 14,
